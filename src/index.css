@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { -webkit-text-size-adjust: 100%; }
+body { @apply bg-fundo text-marinho font-sans antialiased; font-feature-settings: 'tnum' 1; }
+:focus-visible { outline: 2px solid #2a4a86; outline-offset: 2px; }
+input, select, button { font: inherit; }
+.campo { @apply w-full rounded-md border border-linha bg-white px-3 py-2 text-[15px] text-marinho; min-height: 44px; }
+.rotulo { @apply block text-sm font-medium text-marinho/80 mb-1; }
+.botao { @apply inline-flex items-center justify-center rounded-md px-4 font-semibold transition-colors; min-height: 44px; }
+.botao-principal { @apply botao bg-marinho text-white hover:bg-marinho-700 active:bg-marinho; }
+.botao-sec { @apply botao border border-linha bg-white text-marinho hover:bg-fundo; }
+.painel { @apply rounded-lg border border-linha bg-white; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media print {
+  .nao-imprimir { display: none !important; }
+  body { background: white; }
+  .painel { break-inside: avoid; border-color: #bbb; }
+  thead { display: table-header-group; }
+}
