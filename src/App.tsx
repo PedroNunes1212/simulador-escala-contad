@@ -7,6 +7,8 @@ import { Formulario } from './ui/Formulario';
 import { Resultado } from './ui/Resultado';
 
 const CHAVE = 'simulador-escalas:entrada';
+// Na prévia publicada (artifact) o navegador bloqueia download e impressão.
+const PREVIA = import.meta.env.VITE_PREVIA === '1';
 
 function carregar(): Entrada {
   try {
@@ -84,11 +86,11 @@ export default function App() {
             <h1 className="text-base font-medium text-white/85">Simulador de escalas: 44h, 42h e 40h</h1>
           </div>
           <div className="nao-imprimir flex flex-wrap gap-2">
-            <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={exportar}>Salvar arquivo</button>
-            <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir arquivo</button>
+            {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={exportar}>Salvar arquivo</button>}
+            {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir arquivo</button>}
             <input ref={arquivo} type="file" accept="application/json,.json" className="hidden" aria-label="Abrir arquivo de simulação"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); e.target.value = ''; }} />
-            <button type="button" className="botao bg-white text-marinho hover:bg-white/90" onClick={() => window.print()}>Imprimir ou PDF</button>
+            {!PREVIA && <button type="button" className="botao bg-white text-marinho hover:bg-white/90" onClick={() => window.print()}>Imprimir ou PDF</button>}
           </div>
         </div>
       </header>
