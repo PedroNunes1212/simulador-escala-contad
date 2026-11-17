@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ENTRADA_VAZIA, EXEMPLOS } from './dados/exemplos';
-import { CENARIOS, VERSAO_REGRAS } from './motor/regras';
+import { CENARIOS, OBSERVACOES_EC, VERSAO_REGRAS } from './motor/regras';
 import { simularTodos } from './motor/simular';
 import type { Entrada } from './motor/tipos';
 import { Formulario } from './ui/Formulario';
@@ -37,6 +37,7 @@ export function sanitizar(e: unknown): Entrada | null {
   const ids = new Set(funcoes.map((f) => f.id));
   return {
     regime: regimes.includes(x.regime) ? x.regime : 'simples',
+    acordoAcima8h: x.acordoAcima8h === true,
     funcionamento: x.funcionamento.map((d) => ({
       aberto: !!d?.aberto,
       periodos: (Array.isArray(d?.periodos) ? d.periodos : []).slice(0, 3)
@@ -134,6 +135,10 @@ export default function App() {
               ))}
             </tbody>
           </table>
+          <h3 className="mt-4 font-semibold">Outros pontos da EC 141/2026 (a conferir)</h3>
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+            {OBSERVACOES_EC.map((o) => <li key={o}>{o}</li>)}
+          </ul>
         </section>
 
         <a href="#resultado" className="nao-imprimir fixed inset-x-4 bottom-4 z-10 flex min-h-[48px] items-center justify-between rounded-md bg-marinho px-4 font-semibold text-white lg:hidden">

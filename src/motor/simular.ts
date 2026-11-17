@@ -1,7 +1,7 @@
 import { avaliarCobertura, gradeNecessidade } from './cobertura';
 import { custoHoraExtraMensal, custoMensal, salarioProporcional } from './custos';
 import { gerarEscala } from './gerador';
-import { CENARIOS, ENCARGOS_PADRAO } from './regras';
+import { CENARIOS, ENCARGOS_PADRAO, INTERJORNADA_MIN, LIMITE_DIARIO_SEM_ACORDO, TETO_DIARIO_COM_EXTRA, cenarioEfetivo } from './regras';
 import { duracao, hhmm } from './tempo';
 import { DIAS, type Alerta, type Cenario, type Entrada, type Funcao, type ParametrosEncargos, type Pessoa, type ResultadoCenario } from './tipos';
 
@@ -30,7 +30,21 @@ export function horasSemana(p: Pessoa): number {
   return p.turnos.reduce((a, t) => a + t.trabalhoMin, 0);
 }
 
-export function simularCenario(entrada: Entrada, cenario: Cenario, p: ParametrosEncargos = ENCARGOS_PADRAO): ResultadoCenario {
+/** Pares de dias seguidos com menos de 11h de descanso (a semana se repete: domingo → segunda). */
+export function faltasInterjornada(p: Pessoa): { de: number; para: number; descansoMin: number }[] {
+  const porDia = new Map(p.turnos.map((t) => [t.dia, t]));
+  const out: { de: number; para: number; descansoMin: number }[] = [];
+  for (const t of p.turnos) {
+    const prox = porDia.get((t.dia + 1) % 7);
+    if (!prox) continue;
+    const descanso = prox.ini + 1440 - t.fim;
+    if (descanso < INTERJORNADA_MIN) out.push({ de: t.dia, para: prox.dia, descansoMin: descanso });
+  }
+  return out;
+}
+
+export function simularCenario(entrada: Entrada, cenarioBase: Cenario, p: ParametrosEncargos = ENCARGOS_PADRAO): ResultadoCenario {
+  const cenario = cenarioEfetivo(cenarioBase, entrada);
   const pessoas: Pessoa[] = [];
   const cobertura = [];
   const alertas: Alerta[] = [];
@@ -48,11 +62,18 @@ export function simularCenario(entrada: Entrada, cenario: Cenario, p: Parametros
     }
     for (const pe of r.pessoas) {
       const h = horasSemana(pe);
+      for (const f2 of faltasInterjornada(pe)) {
+        alertas.push({ tipo: 'erro', texto: `${pe.nome}: só ${duracao(f2.descansoMin)} de descanso entre ${DIAS[f2.de]} e ${DIAS[f2.para]}. O mínimo é 11h entre jornadas (CLT art. 66). Ajuste os horários ou a equipe.` });
+      }
       if (h > cenario.limiteSemanalMin) alertas.push({ tipo: 'erro', texto: `${pe.nome}: ${duracao(h)} na semana, acima do limite de ${duracao(cenario.limiteSemanalMin)}.` });
       else if (h < Math.min(pe.semanalMin, cenario.limiteSemanalMin)) {
         alertas.push({ tipo: 'info', texto: `${pe.nome}: escalado ${duracao(h)}, menos que ${duracao(Math.min(pe.semanalMin, cenario.limiteSemanalMin))} da jornada. O horário de funcionamento não comporta mais. Não reduza salário por isso.` });
       }
     }
+  }
+  if (cenario.limiteDiarioMin < cenarioBase.limiteDiarioMin) {
+    const max = cenario.limiteDiarioMin * (7 - cenario.folgasSemana);
+    alertas.push({ tipo: 'aviso', texto: `Sem acordo ou convenção que permita mais de ${duracao(LIMITE_DIARIO_SEM_ACORDO)} por dia, cada pessoa fica em até ${duracao(max)} por semana neste cenário, abaixo das ${duracao(cenarioBase.limiteSemanalMin)} permitidas. Se houver acordo, marque a opção em "Empresa".` });
   }
   if (cenario.status === 'pendente') alertas.push({ tipo: 'info', texto: `Regras do cenário ${cenario.id}h ainda não validadas pela ContaD (${cenario.fonte}).` });
   const nec = cobertura.reduce((a, c) => a + c.necessarioMin, 0);
@@ -70,7 +91,8 @@ export interface Alternativa {
 }
 
 /** Alternativas para cobrir o déficit de uma função num cenário. Recalcula a escala para cada uma. */
-export function alternativas(entrada: Entrada, f: Funcao, cenario: Cenario, p: ParametrosEncargos = ENCARGOS_PADRAO): Alternativa[] {
+export function alternativas(entrada: Entrada, f: Funcao, cenarioBase: Cenario, p: ParametrosEncargos = ENCARGOS_PADRAO): Alternativa[] {
+  const cenario = cenarioEfetivo(cenarioBase, entrada);
   const base = escalaFuncao(entrada, f, cenario);
   const deficit = base.cobertura.deficitMin;
   const temSal = f.salario > 0;
@@ -104,14 +126,16 @@ export function alternativas(entrada: Entrada, f: Funcao, cenario: Cenario, p: P
       if (r.cobertura.deficitMin === 0) break;
     }
   }
-  const capacidadeHE = f.quantidade * (7 - cenario.folgasSemana) * 120;
+  // Até 2h extras por dia, sem passar de 10h no dia (CLT art. 59).
+  const capacidadeHE = base.pessoas.flatMap((pe) => pe.turnos)
+    .reduce((a, t) => a + Math.max(0, Math.min(120, TETO_DIARIO_COM_EXTRA - t.trabalhoMin)), 0);
   const heMin = Math.min(deficit, capacidadeHE);
   const he = temSal ? custoHoraExtraMensal(f.salario, cenario.divisor, heMin, entrada.regime, p) : null;
   out.push({
     tipo: 'hora_extra', titulo: `Horas extras (${duracao(heMin)}/semana)`, deficitRestanteMin: deficit - heMin,
     custoAdicionalMensal: he ? he.total : null,
     detalhe: he ? `${he.horasMes}h extras/mês, adicional de ${p.adicionalHoraExtra * 100}%, com DSR e encargos. Estimativa: supõe que as extras caem nos horários descobertos.` : 'Informe o salário para estimar.',
-    ressalvas: ['Hora extra habitual é risco trabalhista; limite de 2h por dia (CLT art. 59).'],
+    ressalvas: ['Hora extra habitual é risco trabalhista; até 2h por dia e no máximo 10h no dia (CLT art. 59).'],
   });
   return out;
 }
