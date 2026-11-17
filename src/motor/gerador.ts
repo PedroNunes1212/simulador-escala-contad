@@ -1,4 +1,4 @@
-import { intervaloMinimo } from './regras';
+import { INTERJORNADA_MIN, intervaloMinimo } from './regras';
 import type { Cenario, DiaFuncionamento, Pessoa, Turno } from './tipos';
 
 const PASSO = 15; // entradas e intervalos começam em múltiplos de 15 min
@@ -42,6 +42,7 @@ export function gerarEscala(p: PedidoEscala): Pessoa[] {
       .slice(0, diasTrabalho)
       .sort((a, b) => a - b);
 
+    const porDia = new Map<number, Turno>();
     for (const dia of escolhidos) {
       const jan = janelaDoDia(funcionamento[dia])!;
       let trabalho = trabalhoDia;
@@ -56,7 +57,13 @@ export function gerarEscala(p: PedidoEscala): Pessoa[] {
       const candidatos: number[] = [];
       for (let ini = jan.ini; ini + dur <= jan.fim; ini += PASSO) candidatos.push(ini);
       candidatos.push(jan.fim - dur); // também testa terminar exatamente no fechamento
-      for (const ini of candidatos) {
+      // Descanso de 11h entre jornadas (CLT art. 66), inclusive de domingo para a segunda seguinte.
+      const ontem = porDia.get(dia - 1);
+      const segunda = dia === 6 ? porDia.get(0) : undefined;
+      const minIni = ontem ? ontem.fim + INTERJORNADA_MIN - 1440 : -Infinity;
+      const maxFim = segunda ? segunda.ini + 1440 - INTERJORNADA_MIN : Infinity;
+      const validos = candidatos.filter((ini) => ini >= minIni && ini + dur <= maxFim);
+      for (const ini of validos.length ? validos : candidatos) {
         let pontos = 0;
         for (let m = ini; m < ini + dur; m++) pontos += Math.max(0, necessidade[dia][m] - cobertura[dia][m]);
         if (pontos > melhorPontos) { melhorPontos = pontos; melhor = ini; }
@@ -65,6 +72,7 @@ export function gerarEscala(p: PedidoEscala): Pessoa[] {
       for (let m = turno.ini; m < turno.fim; m++) cobertura[dia][m]++;
       capacidadeDia[dia] += dur;
       pessoa.turnos.push(turno);
+      porDia.set(dia, turno);
     }
   });
 

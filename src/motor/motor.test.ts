@@ -3,7 +3,7 @@ import { avaliarCobertura, gradeNecessidade } from './cobertura';
 import { custoMensal, custoHoraExtraMensal } from './custos';
 import { gerarEscala } from './gerador';
 import { CENARIOS, ENCARGOS_PADRAO, intervaloMinimo } from './regras';
-import { alternativas, horasSemana, simularCenario } from './simular';
+import { alternativas, faltasInterjornada, horasSemana, simularCenario } from './simular';
 import { duracao, hhmm, paraMinutos } from './tempo';
 import type { DiaFuncionamento, Entrada, Pessoa } from './tipos';
 
@@ -108,10 +108,44 @@ describe('gerador', () => {
       expect(r.alertas.some((a) => a.tipo === 'erro')).toBe(false);
     }
   });
-  it('42h vira 5 jornadas de 8h24 e 40h vira 5 de 8h', () => {
-    const r42 = simularCenario(base, C42), r40 = simularCenario(base, C40);
+  it('com acordo, 42h vira 5 jornadas de 8h24; 40h vira 5 de 8h', () => {
+    const r42 = simularCenario({ ...base, acordoAcima8h: true }, C42), r40 = simularCenario(base, C40);
     expect(r42.pessoas.map(horasSemana)).toEqual([2520, 2520, 2520]);
+    expect(r42.pessoas.every((p) => p.turnos.every((t) => t.trabalhoMin === 504))).toBe(true);
     expect(r40.pessoas.map(horasSemana)).toEqual([2400, 2400, 2400]);
+  });
+  it('sem acordo, 42h fica em 8h por dia e avisa (não limita em silêncio)', () => {
+    const r = simularCenario(base, C42);
+    expect(r.pessoas.every((p) => p.turnos.every((t) => t.trabalhoMin <= 480))).toBe(true);
+    expect(r.alertas.some((a) => /Sem acordo/.test(a.texto))).toBe(true);
+  });
+  it('respeita 11h de descanso entre jornadas, inclusive domingo → segunda', () => {
+    const longo: Entrada = {
+      regime: 'simples', funcionamento: [...Array(7)].map(() => ({ aberto: true, periodos: [{ ini: 6 * 60, fim: 23 * 60 }] })),
+      funcoes: [{ id: 'at', nome: 'Atendente', quantidade: 4, salario: 2000, jornadaContratualMin: 44 * 60 }],
+      demandas: [
+        { funcaoId: 'at', dias: [0, 2, 4, 6], ini: 15 * 60, fim: 23 * 60, pessoas: 2 },
+        { funcaoId: 'at', dias: [1, 3, 5], ini: 6 * 60, fim: 14 * 60, pessoas: 2 },
+      ],
+    };
+    for (const c of [C44, C42, C40]) {
+      const r = simularCenario(longo, c);
+      for (const p of r.pessoas) expect(faltasInterjornada(p)).toEqual([]);
+    }
+  });
+  it('detecta falta de descanso entre jornadas', () => {
+    const p = { id: 'x', nome: 'X', funcaoId: 'at', semanalMin: 2640, turnos: [
+      { dia: 0, ini: 14 * 60, fim: 23 * 60, intervaloIni: 18 * 60, intervaloMin: 60, trabalhoMin: 480 },
+      { dia: 1, ini: 6 * 60, fim: 15 * 60, intervaloIni: 10 * 60, intervaloMin: 60, trabalhoMin: 480 },
+    ] };
+    expect(faltasInterjornada(p)).toEqual([{ de: 0, para: 1, descansoMin: 420 }]);
+  });
+  it('hora extra respeita o teto de 10h por dia', () => {
+    const umaPessoa: Entrada = { ...base, acordoAcima8h: true, funcoes: [{ ...base.funcoes[0], quantidade: 1 }] };
+    const he = alternativas(umaPessoa, umaPessoa.funcoes[0], C42).find((a) => a.tipo === 'hora_extra')!;
+    // 5 dias × (10h − 8h24) = 5 × 96 min = 8h por semana, não 10h
+    expect(he.titulo).toMatch(/8h/);
+    expect(he.titulo).not.toMatch(/10h/);
   });
   it('não amplia jornada contratual menor', () => {
     const e = { ...base, funcoes: [{ ...base.funcoes[0], jornadaContratualMin: 30 * 60 }] };

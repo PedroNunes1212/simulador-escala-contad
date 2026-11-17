@@ -53,6 +53,11 @@ export function Formulario({ entrada, mudar }: Props) {
           {REGIMES.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
         </select>
         <p className="mt-2 text-sm text-marinho/70">Define os encargos: no Simples (exceto anexo IV) não há INSS patronal, RAT nem terceiros.</p>
+        <label className="mt-3 flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-1 h-4 w-4" checked={!!entrada.acordoAcima8h}
+            onChange={(e) => mudar({ ...entrada, acordoAcima8h: e.target.checked })} />
+          <span>Há acordo ou convenção coletiva que permite mais de 8h por dia (ex.: 5 dias de 8h24 nas 42h).</span>
+        </label>
       </Secao>
 
       <Secao titulo="Horário de funcionamento">

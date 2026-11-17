@@ -58,6 +58,8 @@ export interface Entrada {
   funcionamento: DiaFuncionamento[]; // 7 posições
   funcoes: Funcao[];
   demandas: Demanda[];
+  /** Acordo ou convenção coletiva que permite mais de 8h por dia (ex.: 5 × 8h24 no cenário de 42h). */
+  acordoAcima8h?: boolean;
 }
 
 export interface Turno {
