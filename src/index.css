@@ -19,3 +19,9 @@ input, select, button { font: inherit; }
   .painel { break-inside: avoid; border-color: #bbb; }
   thead { display: table-header-group; }
 }
+.chip { @apply inline-flex items-center justify-center rounded-md px-2.5 sm:px-3 text-sm font-semibold text-marinho/75 transition-colors hover:bg-white hover:text-marinho; min-height: 44px; }
+.chip-ativo { @apply bg-marinho text-white shadow-sm hover:bg-marinho hover:text-white; }
+.contador-btn { @apply w-11 text-lg font-semibold text-marinho hover:bg-fundo disabled:text-marinho/25 disabled:hover:bg-white; min-height: 44px; }
+.dia { @apply inline-flex min-h-[44px] min-w-[38px] px-1 items-center justify-center rounded-md border text-sm font-semibold transition-colors; }
+.dia-on { @apply border-marinho bg-marinho text-white; }
+.dia-off { @apply border-linha bg-white text-marinho/60 hover:border-marinho/40; }

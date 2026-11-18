@@ -102,13 +102,17 @@ export default function App() {
             Informe o funcionamento, a equipe e quantas pessoas precisa em cada horário. O simulador monta a escala de cada cenário,
             desconta os intervalos e mostra onde vai faltar gente e quanto custa resolver.
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">Exemplos com dados fictícios:</span>
-            {EXEMPLOS.map((x) => (
-              <button key={x.id} type="button" className={`botao-sec text-sm ${exemplo === x.id ? 'ring-2 ring-marinho-500' : ''}`}
-                onClick={() => { setEntrada(structuredClone(x.entrada)); setExemplo(x.id); }}>{x.nome}</button>
-            ))}
-            <button type="button" className="botao-sec text-sm" onClick={() => { setEntrada(structuredClone(ENTRADA_VAZIA)); setExemplo(null); }}>Começar do zero</button>
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-sm font-medium">Ver um exemplo (dados fictícios):</span>
+            <div role="radiogroup" aria-label="Exemplos" className="inline-flex flex-wrap gap-1 rounded-lg bg-white p-1 ring-1 ring-linha">
+              {EXEMPLOS.map((x) => (
+                <button key={x.id} type="button" role="radio" aria-checked={exemplo === x.id} title={x.descricao}
+                  className={`chip ${exemplo === x.id ? 'chip-ativo' : ''}`}
+                  onClick={() => { setEntrada(structuredClone(x.entrada)); setExemplo(x.id); }}>{x.nome}</button>
+              ))}
+            </div>
+            <button type="button" className="min-h-[44px] px-1 text-sm font-semibold text-marinho-500 underline underline-offset-2 hover:text-marinho"
+              onClick={() => { setEntrada(structuredClone(ENTRADA_VAZIA)); setExemplo(null); }}>Começar do zero</button>
           </div>
           {exemplo && <p className="mt-2 text-sm font-semibold text-[#7a4f0c]">Dados fictícios para demonstração.</p>}
           {erro && <p role="alert" className="mt-2 text-sm font-semibold text-falta">{erro}</p>}
