@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ENTRADA_VAZIA, EXEMPLOS } from './dados/exemplos';
+import { ENTRADA_VAZIA } from './dados/exemplos';
 import { CENARIOS, OBSERVACOES_EC, VERSAO_REGRAS } from './motor/regras';
 import { simularTodos } from './motor/simular';
 import type { Entrada } from './motor/tipos';
@@ -123,23 +123,6 @@ export default function App() {
           </div>
           {erro && <p role="alert" className="mt-3 font-semibold text-[#ffb4a8]">{erro}</p>}
 
-          <ol className="mt-10 grid gap-2 sm:grid-cols-5">
-            {PASSOS.map((p) => (
-              <li key={p.n} className="flex items-center gap-3 rounded-md border border-white/15 px-3 py-2 sm:block sm:py-3">
-                <span className="text-sm font-bold text-white/60">{p.n}</span>
-                <p className="font-semibold">{p.nome}</p>
-              </li>
-            ))}
-          </ol>
-
-          <div className="mt-8 flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-white/75">Ou veja um exemplo com dados fictícios:</span>
-            {EXEMPLOS.map((x) => (
-              <button key={x.id} type="button" title={x.descricao}
-                className="min-h-[44px] rounded-md border border-white/30 px-3 font-semibold text-white hover:bg-white/10"
-                onClick={() => { setEntrada(structuredClone(x.entrada)); setExemplo(x.id); setEtapa(1); }}>{x.nome}</button>
-            ))}
-          </div>
         </main>
         <footer className="mx-auto w-full max-w-3xl px-4 pb-6 text-sm text-white/60 sm:px-6">
           Ferramenta de planejamento. Os dados ficam só neste navegador, nesta aba.
