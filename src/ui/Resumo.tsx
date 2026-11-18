@@ -1,61 +1,8 @@
 import { useMemo } from 'react';
-import { alternativas, type Alternativa } from '../motor/simular';
-import { duracao, hhmm } from '../motor/tempo';
-import { DIAS, type Entrada, type ResultadoCenario } from '../motor/tipos';
+import { duracao } from '../motor/tempo';
+import type { Entrada, ResultadoCenario } from '../motor/tipos';
+import { QUANDO, brl, ondeFalta, pct, solucao } from './analise';
 
-const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-const pct = (v: number) => `${Math.floor(v * 1000) / 10}`.replace('.', ',') + '%';
-
-const QUANDO: Record<string, string> = {
-  '44': 'Hoje, até 15/12/2026',
-  '42': 'A partir de 16/12/2026',
-  '40': 'A partir de 16/12/2027',
-};
-
-function listaDias(dias: number[]): string {
-  const ord = [...dias].sort((a, b) => a - b);
-  const seguidos = ord.every((d, i) => i === 0 || d === ord[i - 1] + 1);
-  if (ord.length >= 3 && seguidos) return `${DIAS[ord[0]]} a ${DIAS[ord[ord.length - 1]]}`;
-  return ord.map((d) => DIAS[d]).join(', ');
-}
-
-/** Junta os horários descobertos iguais em dias diferentes: "Seg a Qua, 13:00 às 14:00". */
-function ondeFalta(entrada: Entrada, r: ResultadoCenario) {
-  const out: { texto: string; peso: number }[] = [];
-  for (const c of r.cobertura) {
-    const f = entrada.funcoes.find((x) => x.id === c.funcaoId);
-    if (!f) continue;
-    const grupos = new Map<string, { dias: number[]; ini: number; fim: number; falta: number }>();
-    for (const p of c.periodosCriticos) {
-      const k = `${p.ini}-${p.fim}-${p.falta}`;
-      const g = grupos.get(k) ?? { dias: [], ini: p.ini, fim: p.fim, falta: p.falta };
-      g.dias.push(p.dia); grupos.set(k, g);
-    }
-    for (const g of grupos.values()) {
-      out.push({
-        texto: `${listaDias(g.dias)}, das ${hhmm(g.ini)} às ${hhmm(g.fim)}: falta ${g.falta} ${f.nome}`,
-        peso: g.falta * (g.fim - g.ini) * g.dias.length,
-      });
-    }
-  }
-  return out.sort((a, b) => b.peso - a.peso);
-}
-
-/** Caminho mais simples que zera a falta de cada função: meio período se resolver, senão o menor número de contratações. */
-function solucao(entrada: Entrada, r: ResultadoCenario) {
-  const passos: { funcao: string; alt: Alternativa }[] = [];
-  for (const c of r.cobertura) {
-    if (c.deficitMin === 0) continue;
-    const f = entrada.funcoes.find((x) => x.id === c.funcaoId)!;
-    const alts = alternativas(entrada, f, r.cenario).filter((a) => a.tipo === 'parcial' || a.tipo === 'integral');
-    const resolve = alts.find((a) => a.deficitRestanteMin === 0);
-    passos.push({ funcao: f.nome, alt: resolve ?? alts[alts.length - 1] });
-  }
-  const custos = passos.map((p) => p.alt.custoAdicionalMensal);
-  const custo = custos.every((x) => x !== null) ? custos.reduce((a: number, b) => a + (b ?? 0), 0) : null;
-  const resolveTudo = passos.every((p) => p.alt.deficitRestanteMin === 0);
-  return { passos, custo, resolveTudo };
-}
 
 function Situacao({ falta, indice }: { falta: number; indice: number }) {
   if (falta === 0) return <span className="rounded-full bg-ok/15 px-3 py-1 text-sm font-bold text-ok">Tudo coberto</span>;

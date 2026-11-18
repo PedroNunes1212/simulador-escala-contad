@@ -1,5 +1,5 @@
 import { DIAS, type Demanda, type DiaFuncionamento, type Entrada, type Funcao, type Regime } from '../motor/tipos';
-import { hhmm } from '../motor/tempo';
+import { resumoFuncionamento } from './analise';
 import { BotaoAdicionar, BotaoRemover, CampoHora, Contador, Segmentado } from './controles';
 
 interface Props { entrada: Entrada; mudar: (e: Entrada) => void; passo?: number }
@@ -32,19 +32,6 @@ function janelaGeral(func: DiaFuncionamento[]) {
   const ps = func.filter((d) => d.aberto).flatMap((d) => d.periodos);
   if (!ps.length) return { ini: 480, fim: 1080 };
   return { ini: Math.min(...ps.map((p) => p.ini)), fim: Math.max(...ps.map((p) => p.fim)) };
-}
-
-/** "Seg a Sex 08:00–18:00; Sáb 08:00–12:00" agrupando dias seguidos com o mesmo horário. */
-function resumoFuncionamento(func: DiaFuncionamento[]): string {
-  const txt = (d: DiaFuncionamento) => d.periodos.map((p) => `${hhmm(p.ini)}–${p.fim === 1440 ? '24:00' : hhmm(p.fim)}`).join(' e ');
-  const grupos: { de: number; ate: number; h: string }[] = [];
-  func.forEach((d, i) => {
-    if (!d.aberto || !d.periodos.length) return;
-    const h = txt(d), ult = grupos[grupos.length - 1];
-    if (ult && ult.h === h && ult.ate === i - 1) ult.ate = i; else grupos.push({ de: i, ate: i, h });
-  });
-  if (!grupos.length) return 'nenhum dia (volte ao passo 2).';
-  return grupos.map((g) => `${g.de === g.ate ? DIAS[g.de] : `${DIAS[g.de]} a ${DIAS[g.ate]}`} ${g.h}`).join('; ') + '.';
 }
 
 function Secao({ titulo, children, descricao, passo }: { titulo: string; descricao?: string; passo: number; children: React.ReactNode }) {

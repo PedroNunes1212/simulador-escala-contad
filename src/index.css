@@ -27,3 +27,4 @@ input, select, button { font: inherit; }
   .painel { break-inside: avoid; border-color: #bbb; }
   thead { display: table-header-group; }
 }
+@media print { @page { size: A4; margin: 14mm; } }
