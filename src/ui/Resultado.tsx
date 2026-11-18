@@ -4,10 +4,9 @@ import { janelaDoDia } from '../motor/gerador';
 import { ENCARGOS_PADRAO } from '../motor/regras';
 import { alternativas, horasSemana } from '../motor/simular';
 import { duracao, hhmm } from '../motor/tempo';
+import { brl, pct } from './analise';
 import { BLOCO_VISUAL, DIAS, type CoberturaFuncao, type Entrada, type Funcao, type ResultadoCenario } from '../motor/tipos';
 
-const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-const pct = (v: number) => `${(v * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
 
 function Mapa({ entrada, cob, funcao }: { entrada: Entrada; cob: CoberturaFuncao; funcao: Funcao }) {
   const dias = DIAS.map((_, i) => i).filter((i) => janelaDoDia(entrada.funcionamento[i]));

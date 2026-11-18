@@ -5,6 +5,7 @@ import { simularTodos } from './motor/simular';
 import type { Entrada } from './motor/tipos';
 import { Formulario } from './ui/Formulario';
 import { Resultado } from './ui/Resultado';
+import { Relatorio } from './ui/Relatorio';
 import { Resumo } from './ui/Resumo';
 import { Segmentado } from './ui/controles';
 
@@ -67,11 +68,12 @@ export default function App() {
   const [erro, setErro] = useState('');
   const [etapa, setEtapa] = useState(0); // 0 = tela inicial
   const [visao, setVisao] = useState<'resumo' | 'completo'>('resumo');
+  const [relatorio, setRelatorio] = useState(false);
   const arquivo = useRef<HTMLInputElement>(null);
   const resultados = useMemo(() => simularTodos(entrada), [entrada]);
 
   useEffect(() => { try { sessionStorage.setItem(CHAVE, JSON.stringify(entrada)); } catch { /* ignora */ } }, [entrada]);
-  useEffect(() => { window.scrollTo({ top: 0 }); document.getElementById('conteudo')?.focus({ preventScroll: true }); }, [etapa]);
+  useEffect(() => { window.scrollTo({ top: 0 }); document.getElementById('conteudo')?.focus({ preventScroll: true }); }, [etapa, relatorio]);
 
   const mudar = (e: Entrada) => { setEntrada(e); setExemplo(null); };
   const exportar = () => {
@@ -134,6 +136,10 @@ export default function App() {
         </footer>
       </div>
     );
+  }
+
+  if (etapa === 5 && relatorio) {
+    return <Relatorio entrada={entrada} resultados={resultados} podeBaixar={!PREVIA} onVoltar={() => setRelatorio(false)} />;
   }
 
   const passo = PASSOS[etapa - 1];
@@ -213,6 +219,16 @@ export default function App() {
             <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
               {OBSERVACOES_EC.map((o) => <li key={o}>{o}</li>)}
             </ul>
+          </section>
+        )}
+
+        {etapa === 5 && (
+          <section className="nao-imprimir mt-6 rounded-lg bg-marinho p-5 text-white sm:p-6">
+            <h2 className="text-xl font-extrabold">Ainda ficou com dúvidas?</h2>
+            <p className="mt-1 text-white/85">Entre em contato com o Departamento Pessoal da ContaD. Gere o relatório da sua simulação e envie para a gente analisar com você.</p>
+            <button type="button" className="botao mt-4 w-full bg-white px-6 text-marinho hover:bg-white/90 sm:w-auto" onClick={() => setRelatorio(true)}>
+              Falar com o Departamento Pessoal
+            </button>
           </section>
         )}
 
