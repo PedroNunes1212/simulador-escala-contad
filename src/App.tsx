@@ -107,24 +107,24 @@ export default function App() {
   if (etapa === 0) {
     return (
       <div className="flex min-h-dvh flex-col bg-marinho text-white">
-        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-4 py-12 sm:px-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">ContaD Assessoria Contábil</p>
-          <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">ContaD<br />Simulador de Escalas</h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/85">
+        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
+          <p className="text-3xl font-extrabold tracking-tight sm:text-4xl">ContaD</p>
+          <h1 className="mt-4 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-7xl">Simulador de Escalas</h1>
+          <p className="mt-6 max-w-[34rem] text-pretty text-lg leading-relaxed text-white/90 sm:text-xl">
             Planeje a mudança da escala 6x1 para 5x2. Compare 44h, 42h e 40h por semana, veja onde vai faltar gente e quanto custa resolver.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <button type="button" autoFocus className="botao min-h-[56px] bg-white px-8 text-lg text-marinho hover:bg-white/90"
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
+            <button type="button" autoFocus
+              className="botao min-h-[56px] w-full min-w-[14rem] bg-white px-10 text-lg text-marinho transition-transform hover:bg-white/90 active:scale-[0.98] sm:w-auto"
               onClick={() => { if (exemplo) { setEntrada(structuredClone(ENTRADA_VAZIA)); setExemplo(null); } setEtapa(1); }}>
               Começar
             </button>
-            {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
+            {!PREVIA && <button type="button" className="botao min-h-[56px] border border-white/40 px-6 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
             {inputArquivo}
           </div>
-          {erro && <p role="alert" className="mt-3 font-semibold text-[#ffb4a8]">{erro}</p>}
-
+          {erro && <p role="alert" className="mt-4 font-semibold text-[#ffb4a8]">{erro}</p>}
         </main>
-        <footer className="mx-auto w-full max-w-3xl px-4 pb-6 text-sm text-white/60 sm:px-6">
+        <footer className="px-4 pb-6 text-center text-sm text-white/70 sm:px-6">
           Ferramenta de planejamento. Os dados ficam só neste navegador, nesta aba.
         </footer>
       </div>
