@@ -213,7 +213,16 @@ export function Formulario({ entrada, mudar, passo }: Props) {
 
       {ver(4) && (
       <Secao passo={passo ? 0 : 4} titulo={passo ? '' : 'Pessoas necessárias por horário'}
-        descricao="Para cada função do passo anterior, diga quantas pessoas precisam estar trabalhando ao mesmo tempo em cada horário. Quem está em intervalo não conta.">
+        descricao="Não é quantas pessoas você tem (isso foi no passo 3). É de quantas você precisa trabalhando ao mesmo tempo, em cada horário, para a empresa funcionar bem. Com isso o simulador mostra onde vai faltar gente.">
+        <div className="mb-4 rounded-md border border-linha bg-white p-3 text-sm sm:p-4">
+          <p className="font-bold">Exemplo: loja com 4 vendedores, aberta das 9h às 19h</p>
+          <ul className="mt-2 space-y-1.5">
+            <li className="flex gap-3"><span className="w-[7.5rem] shrink-0 font-semibold tabular-nums">Das 9h às 11h</span><span><strong>1 vendedor</strong> · movimento fraco</span></li>
+            <li className="flex gap-3"><span className="w-[7.5rem] shrink-0 font-semibold tabular-nums">Das 11h às 15h</span><span><strong>3 vendedores</strong> · pico do almoço</span></li>
+            <li className="flex gap-3"><span className="w-[7.5rem] shrink-0 font-semibold tabular-nums">Das 15h às 19h</span><span><strong>2 vendedores</strong></span></li>
+          </ul>
+          <p className="mt-2 text-marinho/70">Cada horário vale para os dias que você marcar. Quem está no intervalo de almoço não conta.</p>
+        </div>
         <p className="mb-4 rounded-md bg-fundo px-3 py-2 text-sm">
           <strong>Empresa aberta:</strong> {resumoFuncionamento(entrada.funcionamento)}
         </p>
