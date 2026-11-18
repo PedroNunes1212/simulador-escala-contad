@@ -1,7 +1,7 @@
 import { avaliarCobertura, gradeNecessidade } from './cobertura';
 import { custoHoraExtraMensal, custoMensal, salarioProporcional } from './custos';
 import { gerarEscala } from './gerador';
-import { CENARIOS, ENCARGOS_PADRAO, INTERJORNADA_MIN, LIMITE_DIARIO_SEM_ACORDO, TETO_DIARIO_COM_EXTRA, cenarioEfetivo } from './regras';
+import { CENARIOS, DESCANSO_SEMANAL_MIN, ENCARGOS_PADRAO, INTERJORNADA_MIN, LIMITE_DIARIO_SEM_ACORDO, TETO_DIARIO_COM_EXTRA, cenarioEfetivo } from './regras';
 import { duracao, hhmm } from './tempo';
 import { DIAS, type Alerta, type Cenario, type Entrada, type Funcao, type ParametrosEncargos, type Pessoa, type ResultadoCenario } from './tipos';
 
@@ -43,6 +43,19 @@ export function faltasInterjornada(p: Pessoa): { de: number; para: number; desca
   return out;
 }
 
+/** Maior descanso seguido da semana, em minutos (a semana se repete). Deve ser de pelo menos 35h (CLT arts. 66 e 67). */
+export function maiorDescansoSemanal(p: Pessoa): number {
+  const porDia = new Map(p.turnos.map((t) => [t.dia, t]));
+  let maior = 0;
+  for (const t of p.turnos) {
+    let folgas = 0, n = (t.dia + 1) % 7;
+    while (!porDia.has(n)) { folgas++; n = (n + 1) % 7; }
+    const prox = porDia.get(n)!;
+    maior = Math.max(maior, (1440 - t.fim) + folgas * 1440 + prox.ini);
+  }
+  return maior;
+}
+
 export function simularCenario(entrada: Entrada, cenarioBase: Cenario, p: ParametrosEncargos = ENCARGOS_PADRAO): ResultadoCenario {
   const cenario = cenarioEfetivo(cenarioBase, entrada);
   const pessoas: Pessoa[] = [];
@@ -64,6 +77,9 @@ export function simularCenario(entrada: Entrada, cenarioBase: Cenario, p: Parame
       const h = horasSemana(pe);
       for (const f2 of faltasInterjornada(pe)) {
         alertas.push({ tipo: 'erro', texto: `${pe.nome}: só ${duracao(f2.descansoMin)} de descanso entre ${DIAS[f2.de]} e ${DIAS[f2.para]}. O mínimo é 11h entre jornadas (CLT art. 66). Ajuste os horários ou a equipe.` });
+      }
+      if (pe.turnos.length && maiorDescansoSemanal(pe) < DESCANSO_SEMANAL_MIN) {
+        alertas.push({ tipo: 'erro', texto: `${pe.nome}: o maior descanso da semana é de ${duracao(maiorDescansoSemanal(pe))}. O mínimo é 35h seguidas (24h de folga + 11h entre jornadas, CLT arts. 66 e 67). Ajuste os horários ou a equipe.` });
       }
       if (h > cenario.limiteSemanalMin) alertas.push({ tipo: 'erro', texto: `${pe.nome}: ${duracao(h)} na semana, acima do limite de ${duracao(cenario.limiteSemanalMin)}.` });
       else if (h < Math.min(pe.semanalMin, cenario.limiteSemanalMin)) {

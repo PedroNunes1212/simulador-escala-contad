@@ -9,7 +9,7 @@ O empresário não sabe se, com a equipe que tem, vai conseguir manter a empresa
 ## User stories (MVP)
 1. Como empresário, quero informar o horário de funcionamento por dia, para que a escala respeite quando a loja está aberta. **Aceite:** nenhum turno cai em dia fechado ou fora do horário.
 2. Como empresário, quero dizer quantas pessoas preciso em cada faixa de horário, por função, para ver onde falta gente. **Aceite:** o mapa mostra déficit no horário certo; excesso num horário não compensa falta em outro.
-3. Como empresário, quero ver a escala de 44h, 42h e 40h lado a lado, para comparar. **Aceite:** 42h = 5×8h24, 40h = 5×8h, folgas 1 ou 2 por semana, sem passar dos limites.
+3. Como empresário, quero ver a escala de 44h, 42h e 40h lado a lado, para comparar. **Aceite:** 42h = 5×8h24 só com acordo ou convenção (sem acordo, 5×8h com aviso), 40h = 5×8h, folgas 1 ou 2 por semana, 11h entre jornadas e 35h de descanso semanal, nunca trabalhando com a empresa fechada.
 4. Como empresário, quero que os intervalos sejam distribuídos e descontados, para saber a cobertura real. **Aceite:** quem está em intervalo não conta como disponível.
 5. Como cliente da ContaD, quero ver o custo pelo meu regime tributário, para não superestimar a folha. **Aceite:** Simples (I, II, III, V) sem INSS patronal, RAT e terceiros.
 6. Como empresário, quero comparar reorganizar, meio período, contratar e hora extra, para decidir. **Aceite:** cada alternativa recalcula a escala e mostra o déficit que sobra e o custo.

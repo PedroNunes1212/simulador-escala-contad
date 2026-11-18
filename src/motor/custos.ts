@@ -14,9 +14,14 @@ export interface CustoDetalhado {
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
-/** Simples Nacional (anexos I, II, III e V) não recolhe CPP, RAT nem terceiros em separado. */
+/** Simples Nacional (anexos I, II, III e V) não recolhe CPP nem RAT em separado; o anexo IV recolhe (LC 123, art. 18, §5º-C). */
 export function pagaCpp(regime: Regime): boolean {
   return regime !== 'simples';
+}
+
+/** Terceiros (Sistema S, salário-educação): todo o Simples é dispensado, inclusive o anexo IV (LC 123, art. 13, §3º). */
+export function pagaTerceiros(regime: Regime): boolean {
+  return regime === 'presumido_real';
 }
 
 /** Custo mensal de um funcionário: salário + provisões + encargos do regime. */
@@ -28,7 +33,7 @@ export function custoMensal(salario: number, regime: Regime, p: ParametrosEncarg
   const multaFgts = fgts * p.multaFgtsProvisao;
   const cpp = pagaCpp(regime) ? base * p.cpp : 0;
   const rat = pagaCpp(regime) ? base * p.rat : 0;
-  const terceiros = pagaCpp(regime) ? base * p.terceiros : 0;
+  const terceiros = pagaTerceiros(regime) ? base * p.terceiros : 0;
   const total = base + fgts + multaFgts + cpp + rat + terceiros;
   return {
     salario: r2(salario), ferias: r2(ferias), decimo: r2(decimo), fgts: r2(fgts),
@@ -39,7 +44,7 @@ export function custoMensal(salario: number, regime: Regime, p: ParametrosEncarg
 /** Fator de encargos sobre uma verba salarial (ex.: hora extra), incluindo reflexos em férias e 13º. */
 export function fatorEncargos(regime: Regime, p: ParametrosEncargos): number {
   const provisoes = 1 + (4 / 3) / 12 + 1 / 12;
-  const enc = p.fgts * (1 + p.multaFgtsProvisao) + (pagaCpp(regime) ? p.cpp + p.rat + p.terceiros : 0);
+  const enc = p.fgts * (1 + p.multaFgtsProvisao) + (pagaCpp(regime) ? p.cpp + p.rat : 0) + (pagaTerceiros(regime) ? p.terceiros : 0);
   return provisoes * (1 + enc);
 }
 
