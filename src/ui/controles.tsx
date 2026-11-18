@@ -25,7 +25,7 @@ export function Contador({ valor, onChange, min, max, rotulo, sufixo, id }: {
       <div className="inline-flex items-stretch overflow-hidden rounded-md border border-linha bg-white">
         <button type="button" className="contador-btn" aria-label={`Diminuir ${rotulo}`} disabled={valor <= min} onClick={() => onChange(lim(valor - 1))}>−</button>
         <input id={id} type="number" inputMode="numeric" min={min} max={max} aria-label={id ? undefined : rotulo}
-          className="w-12 border-x border-linha text-center text-[15px] tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-12 border-x border-linha bg-white text-marinho text-center text-[15px] tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
           value={valor} onChange={(e) => onChange(lim(Number(e.target.value) || 0))} />
         <button type="button" className="contador-btn" aria-label={`Aumentar ${rotulo}`} disabled={valor >= max} onClick={() => onChange(lim(valor + 1))}>+</button>
       </div>
