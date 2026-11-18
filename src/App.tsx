@@ -107,19 +107,24 @@ export default function App() {
   if (etapa === 0) {
     return (
       <div className="flex min-h-dvh flex-col bg-marinho text-white">
-        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
-          <p className="text-3xl font-extrabold tracking-tight sm:text-4xl">ContaD</p>
-          <h1 className="mt-4 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-7xl">Simulador de Escalas</h1>
-          <p className="mt-6 max-w-[34rem] text-pretty text-lg leading-relaxed text-white/90 sm:text-xl">
+        <header className="flex justify-center px-4 pt-8 sm:pt-12">
+          <p className="text-center leading-none">
+            <span className="block text-[1.75rem] font-extrabold tracking-[-0.02em] sm:text-[2rem]">ContaD</span>
+            <span className="mt-1.5 block text-[0.95rem] font-medium text-white/80 sm:text-base">Assessoria Contábil</span>
+          </p>
+        </header>
+        <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-4 pb-16 pt-10 text-center sm:px-6">
+          <h1 className="text-balance text-[3rem] font-extrabold leading-[0.95] tracking-[-0.035em] sm:text-[5.5rem] lg:text-[6.5rem]">Simulador de Escalas</h1>
+          <p className="mt-7 max-w-[36rem] text-pretty text-lg leading-[1.55] text-white/90 sm:mt-8 sm:text-[1.3rem]">
             Planeje a mudança da escala 6x1 para 5x2. Compare 44h, 42h e 40h por semana, veja onde vai faltar gente e quanto custa resolver.
           </p>
-          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
+          <div className="mt-10 flex w-full flex-col items-center gap-3 sm:mt-12 sm:w-auto sm:flex-row">
             <button type="button" autoFocus
-              className="botao min-h-[56px] w-full min-w-[14rem] bg-white px-10 text-lg text-marinho transition-transform hover:bg-white/90 active:scale-[0.98] sm:w-auto"
+              className="botao min-h-[60px] w-full min-w-[15rem] bg-white px-10 text-xl text-marinho transition-transform hover:bg-white/90 active:scale-[0.98] sm:w-auto"
               onClick={() => { if (exemplo) { setEntrada(structuredClone(ENTRADA_VAZIA)); setExemplo(null); } setEtapa(1); }}>
               Começar
             </button>
-            {!PREVIA && <button type="button" className="botao min-h-[56px] border border-white/40 px-6 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
+            {!PREVIA && <button type="button" className="botao min-h-[60px] w-full border border-white/40 px-6 text-white hover:bg-white/10 sm:w-auto" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
             {inputArquivo}
           </div>
           {erro && <p role="alert" className="mt-4 font-semibold text-[#ffb4a8]">{erro}</p>}
