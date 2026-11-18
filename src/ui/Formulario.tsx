@@ -1,4 +1,5 @@
 import { DIAS, type Demanda, type DiaFuncionamento, type Entrada, type Funcao, type Regime } from '../motor/tipos';
+import { hhmm } from '../motor/tempo';
 import { BotaoAdicionar, BotaoRemover, CampoHora, Contador, Segmentado } from './controles';
 
 interface Props { entrada: Entrada; mudar: (e: Entrada) => void; passo?: number }
@@ -17,6 +18,35 @@ const ATALHOS: { valor: string; nome: string; dias: number[] }[] = [
 
 const JORNADAS = [44, 42, 40, 36, 30];
 
+/** Dias em que a faixa passa do horário aberto daquele dia. */
+function foraDoHorario(d: Demanda, func: DiaFuncionamento[]): string {
+  const dias = d.dias.filter((i) => {
+    const ps = func[i].aberto ? func[i].periodos : [];
+    if (!ps.length) return true;
+    return d.ini < Math.min(...ps.map((p) => p.ini)) || d.fim > Math.max(...ps.map((p) => p.fim));
+  });
+  return dias.map((i) => DIAS[i]).join(', ');
+}
+
+function janelaGeral(func: DiaFuncionamento[]) {
+  const ps = func.filter((d) => d.aberto).flatMap((d) => d.periodos);
+  if (!ps.length) return { ini: 480, fim: 1080 };
+  return { ini: Math.min(...ps.map((p) => p.ini)), fim: Math.max(...ps.map((p) => p.fim)) };
+}
+
+/** "Seg a Sex 08:00–18:00; Sáb 08:00–12:00" agrupando dias seguidos com o mesmo horário. */
+function resumoFuncionamento(func: DiaFuncionamento[]): string {
+  const txt = (d: DiaFuncionamento) => d.periodos.map((p) => `${hhmm(p.ini)}–${p.fim === 1440 ? '24:00' : hhmm(p.fim)}`).join(' e ');
+  const grupos: { de: number; ate: number; h: string }[] = [];
+  func.forEach((d, i) => {
+    if (!d.aberto || !d.periodos.length) return;
+    const h = txt(d), ult = grupos[grupos.length - 1];
+    if (ult && ult.h === h && ult.ate === i - 1) ult.ate = i; else grupos.push({ de: i, ate: i, h });
+  });
+  if (!grupos.length) return 'nenhum dia (volte ao passo 2).';
+  return grupos.map((g) => `${g.de === g.ate ? DIAS[g.de] : `${DIAS[g.de]} a ${DIAS[g.ate]}`} ${g.h}`).join('; ') + '.';
+}
+
 function Secao({ titulo, children, descricao, passo }: { titulo: string; descricao?: string; passo: number; children: React.ReactNode }) {
   return (
     <section className="painel p-4 sm:p-5">
@@ -34,7 +64,7 @@ function Secao({ titulo, children, descricao, passo }: { titulo: string; descric
 
 function SeletorDias({ dias, onChange, rotulo, permitidos }: { dias: number[]; onChange: (d: number[]) => void; rotulo: string; permitidos?: number[] }) {
   return (
-    <div className="flex flex-wrap gap-[3px]" role="group" aria-label={rotulo}>
+    <div className="flex flex-wrap gap-[3px] sm:gap-1" role="group" aria-label={rotulo}>
       {DIAS.map((nome, dia) => {
         const on = dias.includes(dia);
         const fora = permitidos && !permitidos.includes(dia);
@@ -72,7 +102,20 @@ export function Formulario({ entrada, mudar, passo }: Props) {
   };
   const removerFuncao = (id: string) => mudar({ ...entrada, funcoes: entrada.funcoes.filter((f) => f.id !== id), demandas: entrada.demandas.filter((d) => d.funcaoId !== id) });
   const setDemanda = (i: number, d: Partial<Demanda>) => mudar({ ...entrada, demandas: entrada.demandas.map((x, j) => (j === i ? { ...x, ...d } : x)) });
-  const novaDemanda = (funcaoId: string) => mudar({ ...entrada, demandas: [...entrada.demandas, { funcaoId, dias: abertos, ini: 660, fim: 840, pessoas: 2 }] });
+  const novaDemanda = (funcaoId: string) => {
+    const f = entrada.funcoes.find((x) => x.id === funcaoId);
+    const jan = janelaGeral(entrada.funcionamento);
+    const anteriores = entrada.demandas.filter((d) => d.funcaoId === funcaoId);
+    // 1ª: mínimo no horário todo. 2ª: pico do meio do dia. Depois: continua de onde a última terminou.
+    const q = f?.quantidade ?? 1;
+    let ini = jan.ini, fim = jan.fim, pessoas = 1;
+    if (anteriores.length === 1) {
+      ini = Math.max(jan.ini, Math.min(660, jan.fim - 180)); fim = Math.min(jan.fim, ini + 180); pessoas = Math.max(1, Math.min(q, 2));
+    } else if (anteriores.length > 1) {
+      ini = Math.min(anteriores[anteriores.length - 1].fim, jan.fim - 60); fim = Math.min(ini + 120, jan.fim); pessoas = Math.max(1, Math.min(q, 2));
+    }
+    mudar({ ...entrada, demandas: [...entrada.demandas, { funcaoId, dias: abertos, ini, fim: Math.max(fim, ini + 15), pessoas }] });
+  };
 
   return (
     <div className="space-y-4">
@@ -169,32 +212,74 @@ export function Formulario({ entrada, mudar, passo }: Props) {
       )}
 
       {ver(4) && (
-      <Secao passo={passo ? 0 : 4} titulo={passo ? '' : 'Pessoas necessárias por horário'} descricao="Quantas pessoas precisam estar trabalhando ao mesmo tempo (fora do intervalo). Sem faixas, consideramos 1 pessoa da função em todo o horário aberto.">
+      <Secao passo={passo ? 0 : 4} titulo={passo ? '' : 'Pessoas necessárias por horário'}
+        descricao="Para cada função do passo anterior, diga quantas pessoas precisam estar trabalhando ao mesmo tempo em cada horário. Quem está em intervalo não conta.">
+        <p className="mb-4 rounded-md bg-fundo px-3 py-2 text-sm">
+          <strong>Empresa aberta:</strong> {resumoFuncionamento(entrada.funcionamento)}
+        </p>
         <div className="space-y-5">
-          {entrada.funcoes.map((f) => (
-            <div key={f.id}>
-              <h3 className="font-semibold">{f.nome}</h3>
-              <ul className="mt-2 space-y-2">
-                {entrada.demandas.map((d, i) => d.funcaoId !== f.id ? null : (
-                  <li key={i} className="rounded-md border border-linha bg-fundo/60 p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="flex items-center gap-1">
-                        <CampoHora rotulo="Início da faixa" valor={d.ini} max={1425} onChange={(m) => setDemanda(i, { ini: m })} />
-                        <span aria-hidden className="text-marinho/60">às</span>
-                        <CampoHora rotulo="Fim da faixa" valor={d.fim} min={15} onChange={(m) => setDemanda(i, { fim: m })} />
-                      </span>
-                      <Contador rotulo="pessoas necessárias" valor={d.pessoas} min={0} max={50} sufixo={d.pessoas === 1 ? 'pessoa' : 'pessoas'}
-                        onChange={(n) => setDemanda(i, { pessoas: n })} />
-                      <span className="ml-auto"><BotaoRemover rotulo="Remover faixa" onClick={() => mudar({ ...entrada, demandas: entrada.demandas.filter((_, j) => j !== i) })} /></span>
-                    </div>
-                    <div className="mt-2"><SeletorDias rotulo="Dias da faixa" dias={d.dias} permitidos={abertos} onChange={(dias) => setDemanda(i, { dias })} /></div>
-                    {d.fim <= d.ini && <p className="mt-2 text-sm font-semibold text-falta">O fim precisa ser depois do início.</p>}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-2"><BotaoAdicionar onClick={() => novaDemanda(f.id)}>Adicionar faixa de horário</BotaoAdicionar></div>
-            </div>
-          ))}
+          {entrada.funcoes.map((f) => {
+            const faixas = entrada.demandas.map((d, i) => ({ d, i })).filter(({ d }) => d.funcaoId === f.id);
+            const nome = f.nome.trim() || 'Função sem nome';
+            return (
+              <div key={f.id} className="rounded-lg border border-linha p-2.5 sm:p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <h3 className="text-lg font-bold">{nome}</h3>
+                  <span className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${f.quantidade ? 'bg-marinho/10 text-marinho' : 'bg-falta/10 text-falta'}`}>
+                    Você tem {f.quantidade} {f.quantidade === 1 ? 'pessoa' : 'pessoas'} · {f.jornadaContratualMin / 60}h por semana
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-marinho/75">
+                  {f.quantidade
+                    ? `Em cada horário, quantas dessas ${f.quantidade} pessoas precisam estar trabalhando?`
+                    : 'Nenhuma pessoa nessa função. Se precisar de alguém, o resultado mostra quanto custa contratar.'}
+                </p>
+
+                {faixas.length === 0 && (
+                  <div className="mt-3 rounded-md border border-dashed border-linha bg-fundo/60 p-3 text-sm">
+                    <p>Nenhum horário definido ainda. Sem faixas, o simulador considera <strong>1 pessoa</strong> durante todo o horário aberto.</p>
+                  </div>
+                )}
+
+                {faixas.length > 0 && (
+                  <p className="mt-2 text-sm text-marinho/70">Dica: comece pelo mínimo do dia todo e acrescente os horários de pico. Quando horários se sobrepõem, vale o maior número.</p>
+                )}
+                <ul className="mt-3 space-y-2">
+                  {faixas.map(({ d, i }, n) => (
+                    <li key={i} className="rounded-md border border-linha bg-fundo/60 p-2.5 sm:p-3">
+                      <div className="-mt-1 mb-1 flex items-center justify-between">
+                        <span className="text-sm font-bold text-marinho/70">Horário {n + 1}</span>
+                        <BotaoRemover rotulo={`Remover horário ${n + 1}`} onClick={() => mudar({ ...entrada, demandas: entrada.demandas.filter((_, j) => j !== i) })} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+                        <span className="text-sm font-semibold">Das</span>
+                        <CampoHora rotulo={`Início da faixa de ${nome}`} valor={d.ini} max={1425} onChange={(m) => setDemanda(i, { ini: m })} />
+                        <span className="text-sm font-semibold">às</span>
+                        <CampoHora rotulo={`Fim da faixa de ${nome}`} valor={d.fim} min={15} onChange={(m) => setDemanda(i, { fim: m })} />
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold">precisa de</span>
+                        <Contador rotulo={`${nome} necessários`} valor={d.pessoas} min={0} max={50} onChange={(n) => setDemanda(i, { pessoas: n })} />
+                        <span className="text-sm">{d.pessoas === 1 ? 'pessoa' : 'pessoas'}</span>
+                      </div>
+                      <div className="mt-2"><SeletorDias rotulo="Dias da faixa" dias={d.dias} permitidos={abertos} onChange={(dias) => setDemanda(i, { dias })} /></div>
+                      {d.fim <= d.ini && <p className="mt-2 text-sm font-semibold text-falta">O fim precisa ser depois do início.</p>}
+                      {d.pessoas > f.quantidade && (
+                        <p className="mt-2 text-sm font-semibold text-[#7a4f0c]">
+                          Você tem só {f.quantidade}. Pode manter: o resultado mostra a falta e as opções para cobrir.
+                        </p>
+                      )}
+                      {d.dias.length === 0 && <p className="mt-2 text-sm font-semibold text-falta">Escolha pelo menos um dia.</p>}
+                      {foraDoHorario(d, entrada.funcionamento) && (
+                        <p className="mt-2 text-sm text-marinho/70">Parte desse horário fica fora do funcionamento ({foraDoHorario(d, entrada.funcionamento)}). Essa parte não entra na conta.</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2"><BotaoAdicionar onClick={() => novaDemanda(f.id)}>{faixas.length ? 'Adicionar outro horário' : 'Definir horários'}</BotaoAdicionar></div>
+              </div>
+            );
+          })}
         </div>
       </Secao>
       )}

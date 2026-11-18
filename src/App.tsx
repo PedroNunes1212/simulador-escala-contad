@@ -5,6 +5,8 @@ import { simularTodos } from './motor/simular';
 import type { Entrada } from './motor/tipos';
 import { Formulario } from './ui/Formulario';
 import { Resultado } from './ui/Resultado';
+import { Resumo } from './ui/Resumo';
+import { Segmentado } from './ui/controles';
 
 const CHAVE = 'simulador-escalas:entrada';
 // Na prévia publicada (artifact) o navegador bloqueia download e impressão.
@@ -55,8 +57,8 @@ const PASSOS = [
   { n: 1, nome: 'Empresa', dica: 'Regime tributário e acordo coletivo.' },
   { n: 2, nome: 'Funcionamento', dica: 'Dias e horários em que a empresa abre.' },
   { n: 3, nome: 'Equipe', dica: 'Funções, quantidade de pessoas, jornada e salário.' },
-  { n: 4, nome: 'Pessoas por horário', dica: 'Quantas pessoas precisam estar trabalhando em cada faixa.' },
-  { n: 5, nome: 'Resultado', dica: 'Escalas de 44h, 42h e 40h, faltas, alternativas e custos.' },
+  { n: 4, nome: 'Pessoas por horário', dica: 'Para cada função da sua equipe, quantas pessoas precisam estar trabalhando em cada horário.' },
+  { n: 5, nome: 'Resultado', dica: 'Veja o resumo simples ou o resultado completo, com escala, mapa de cobertura e custos.' },
 ];
 
 export default function App() {
@@ -64,6 +66,7 @@ export default function App() {
   const [exemplo, setExemplo] = useState<string | null>(null);
   const [erro, setErro] = useState('');
   const [etapa, setEtapa] = useState(0); // 0 = tela inicial
+  const [visao, setVisao] = useState<'resumo' | 'completo'>('resumo');
   const arquivo = useRef<HTMLInputElement>(null);
   const resultados = useMemo(() => simularTodos(entrada), [entrada]);
 
@@ -92,7 +95,8 @@ export default function App() {
   const bloqueio: Record<number, string> = {};
   if (!entrada.funcionamento.some((d) => d.aberto && d.periodos.some((p) => p.fim > p.ini))) bloqueio[2] = 'Marque pelo menos um dia aberto com horário válido.';
   if (!entrada.funcoes.some((f) => f.quantidade > 0)) bloqueio[3] = 'Informe pelo menos uma pessoa na equipe.';
-  if (entrada.demandas.some((d) => d.fim <= d.ini)) bloqueio[4] = 'Há faixa de horário com o fim antes do início.';
+  if (entrada.demandas.some((d) => d.fim <= d.ini)) bloqueio[4] = 'Há horário com o fim antes do início.';
+  else if (entrada.demandas.some((d) => d.dias.length === 0)) bloqueio[4] = 'Há horário sem nenhum dia escolhido.';
   const motivo = bloqueio[etapa];
 
   const inputArquivo = (
@@ -111,7 +115,7 @@ export default function App() {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <button type="button" autoFocus className="botao min-h-[56px] bg-white px-8 text-lg text-marinho hover:bg-white/90"
-              onClick={() => setEtapa(1)}>
+              onClick={() => { if (exemplo) { setEntrada(structuredClone(ENTRADA_VAZIA)); setExemplo(null); } setEtapa(1); }}>
               Começar
             </button>
             {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
@@ -185,10 +189,20 @@ export default function App() {
         {exemplo && <p className="mt-2 text-sm font-semibold text-[#7a4f0c]">Dados fictícios para demonstração.</p>}
 
         <div className="mt-5">
-          {etapa < 5 ? <Formulario entrada={entrada} mudar={mudar} passo={etapa} /> : <Resultado entrada={entrada} resultados={resultados} />}
+          {etapa < 5 && <Formulario entrada={entrada} mudar={mudar} passo={etapa} />}
+          {etapa === 5 && (
+            <>
+              <div className="nao-imprimir mb-4 flex flex-wrap items-center gap-3">
+                <span className="text-sm font-semibold">Como quer ver?</span>
+                <Segmentado rotulo="Tipo de resultado" valor={visao} onChange={setVisao}
+                  opcoes={[{ valor: 'resumo', nome: 'Resumo simples' }, { valor: 'completo', nome: 'Completo, com escala e mapa' }]} />
+              </div>
+              {visao === 'resumo' ? <Resumo entrada={entrada} resultados={resultados} /> : <Resultado entrada={entrada} resultados={resultados} />}
+            </>
+          )}
         </div>
 
-        {etapa === 5 && (
+        {etapa === 5 && visao === 'completo' && (
           <section className="painel mt-6 p-4 sm:p-5">
             <h2 className="text-lg font-bold">Regras usadas</h2>
             <p className="mt-1 text-sm text-marinho/70">Versão {VERSAO_REGRAS.split('-').reverse().join('/')}. Regras pendentes ainda não foram conferidas pela ContaD e servem como hipótese de planejamento.</p>
