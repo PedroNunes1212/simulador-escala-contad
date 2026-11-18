@@ -57,7 +57,7 @@ const PASSOS = [
   { n: 1, nome: 'Empresa', dica: 'Regime tributário e acordo coletivo.' },
   { n: 2, nome: 'Funcionamento', dica: 'Dias e horários em que a empresa abre.' },
   { n: 3, nome: 'Equipe', dica: 'Funções, quantidade de pessoas, jornada e salário.' },
-  { n: 4, nome: 'Pessoas por horário', dica: 'Para cada função da sua equipe, quantas pessoas precisam estar trabalhando em cada horário.' },
+  { n: 4, nome: 'Pessoas por horário', dica: 'Quantas pessoas precisam estar trabalhando ao mesmo tempo, em cada horário do dia?' },
   { n: 5, nome: 'Resultado', dica: 'Veja o resumo simples ou o resultado completo, com escala, mapa de cobertura e custos.' },
 ];
 
