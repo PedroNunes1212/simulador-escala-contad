@@ -1,7 +1,7 @@
 import { DIAS, type Demanda, type DiaFuncionamento, type Entrada, type Funcao, type Regime } from '../motor/tipos';
 import { BotaoAdicionar, BotaoRemover, CampoHora, Contador, Segmentado } from './controles';
 
-interface Props { entrada: Entrada; mudar: (e: Entrada) => void }
+interface Props { entrada: Entrada; mudar: (e: Entrada) => void; passo?: number }
 
 const REGIMES: { id: Regime; nome: string }[] = [
   { id: 'simples', nome: 'Simples Nacional (anexos I, II, III ou V)' },
@@ -20,12 +20,14 @@ const JORNADAS = [44, 42, 40, 36, 30];
 function Secao({ titulo, children, descricao, passo }: { titulo: string; descricao?: string; passo: number; children: React.ReactNode }) {
   return (
     <section className="painel p-4 sm:p-5">
-      <h2 className="flex items-center gap-2 text-lg font-bold">
-        <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-marinho text-sm text-white">{passo}</span>
-        {titulo}
-      </h2>
-      {descricao && <p className="mt-1 text-[15px] text-marinho/75">{descricao}</p>}
-      <div className="mt-4">{children}</div>
+      {titulo && (
+        <h2 className="flex items-center gap-2 text-lg font-bold">
+          <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-marinho text-sm text-white">{passo}</span>
+          {titulo}
+        </h2>
+      )}
+      {descricao && <p className={`${titulo ? 'mt-1' : ''} text-[15px] text-marinho/75`}>{descricao}</p>}
+      <div className={titulo || descricao ? 'mt-4' : ''}>{children}</div>
     </section>
   );
 }
@@ -46,7 +48,8 @@ function SeletorDias({ dias, onChange, rotulo, permitidos }: { dias: number[]; o
   );
 }
 
-export function Formulario({ entrada, mudar }: Props) {
+export function Formulario({ entrada, mudar, passo }: Props) {
+  const ver = (n: number) => !passo || passo === n;
   const abertos = entrada.funcionamento.map((d, i) => (d.aberto ? i : -1)).filter((i) => i >= 0);
   const atalhoAtivo = ATALHOS.find((a) => a.dias.length === abertos.length && a.dias.every((d) => abertos.includes(d)))?.valor ?? null;
   const modelo = () => entrada.funcionamento.find((d) => d.aberto && d.periodos.length) ?? { aberto: true, periodos: [{ ini: 480, fim: 1080 }] };
@@ -73,7 +76,8 @@ export function Formulario({ entrada, mudar }: Props) {
 
   return (
     <div className="space-y-4">
-      <Secao passo={1} titulo="Empresa">
+      {ver(1) && (
+      <Secao passo={passo ? 0 : 1} titulo={passo ? '' : 'Empresa'}>
         <label className="rotulo" htmlFor="regime">Regime tributário</label>
         <select id="regime" className="campo" value={entrada.regime} onChange={(e) => mudar({ ...entrada, regime: e.target.value as Regime })}>
           {REGIMES.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
@@ -85,8 +89,10 @@ export function Formulario({ entrada, mudar }: Props) {
           onChange={(v) => mudar({ ...entrada, acordoAcima8h: v === 'sim' })} />
         <p className="mt-2 text-sm text-marinho/70">Com acordo, as 42h podem ser 5 dias de 8h24. Sem acordo, o limite é 8h por dia.</p>
       </Secao>
+      )}
 
-      <Secao passo={2} titulo="Horário de funcionamento">
+      {ver(2) && (
+      <Secao passo={passo ? 0 : 2} titulo={passo ? '' : 'Horário de funcionamento'}>
         <Segmentado rotulo="Atalho de dias" valor={atalhoAtivo} opcoes={ATALHOS.map(({ valor, nome }) => ({ valor, nome }))}
           onChange={(v) => setAbertos(ATALHOS.find((a) => a.valor === v)!.dias)} />
         <p className="rotulo mt-4">Dias abertos</p>
@@ -115,10 +121,12 @@ export function Formulario({ entrada, mudar }: Props) {
             </li>
           ))}
         </ul>
-        {abertos.length === 0 && <p className="mt-2 text-sm font-semibold text-falta">Marque pelo menos um dia aberto.</p>}
+        {abertos.length === 0 && !passo && <p className="mt-2 text-sm font-semibold text-falta">Marque pelo menos um dia aberto.</p>}
       </Secao>
+      )}
 
-      <Secao passo={3} titulo="Equipe" descricao="Agrupe por função. Salário é opcional: sem ele, mostramos só a parte operacional.">
+      {ver(3) && (
+      <Secao passo={passo ? 0 : 3} titulo={passo ? '' : 'Equipe'} descricao="Agrupe por função. Salário é opcional: sem ele, mostramos só a parte operacional.">
         <div className="space-y-3">
           {entrada.funcoes.map((f) => {
             const h = f.jornadaContratualMin / 60;
@@ -158,8 +166,10 @@ export function Formulario({ entrada, mudar }: Props) {
           <BotaoAdicionar onClick={novaFuncao}>Adicionar função</BotaoAdicionar>
         </div>
       </Secao>
+      )}
 
-      <Secao passo={4} titulo="Pessoas necessárias por horário" descricao="Quantas pessoas precisam estar trabalhando ao mesmo tempo (fora do intervalo). Sem faixas, consideramos 1 pessoa da função em todo o horário aberto.">
+      {ver(4) && (
+      <Secao passo={passo ? 0 : 4} titulo={passo ? '' : 'Pessoas necessárias por horário'} descricao="Quantas pessoas precisam estar trabalhando ao mesmo tempo (fora do intervalo). Sem faixas, consideramos 1 pessoa da função em todo o horário aberto.">
         <div className="space-y-5">
           {entrada.funcoes.map((f) => (
             <div key={f.id}>
@@ -187,6 +197,7 @@ export function Formulario({ entrada, mudar }: Props) {
           ))}
         </div>
       </Secao>
+      )}
     </div>
   );
 }

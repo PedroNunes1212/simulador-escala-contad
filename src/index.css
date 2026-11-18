@@ -6,12 +6,20 @@ html { -webkit-text-size-adjust: 100%; }
 body { @apply bg-fundo text-marinho font-sans antialiased; font-feature-settings: 'tnum' 1; }
 :focus-visible { outline: 2px solid #2a4a86; outline-offset: 2px; }
 input, select, button { font: inherit; }
+@layer components {
 .campo { @apply w-full rounded-md border border-linha bg-white px-3 py-2 text-[15px] text-marinho; min-height: 44px; }
 .rotulo { @apply block text-sm font-medium text-marinho/80 mb-1; }
 .botao { @apply inline-flex items-center justify-center rounded-md px-4 font-semibold transition-colors; min-height: 44px; }
-.botao-principal { @apply botao bg-marinho text-white hover:bg-marinho-700 active:bg-marinho; }
+.botao-principal { @apply botao bg-marinho text-white hover:bg-marinho-700 active:bg-marinho disabled:cursor-not-allowed disabled:bg-marinho/30; }
 .botao-sec { @apply botao border border-linha bg-white text-marinho hover:bg-fundo; }
 .painel { @apply rounded-lg border border-linha bg-white; }
+.chip { @apply inline-flex items-center justify-center rounded-md px-2.5 sm:px-3 text-sm font-semibold text-marinho/75 transition-colors hover:bg-white hover:text-marinho; min-height: 44px; }
+.chip-ativo { @apply bg-marinho text-white shadow-sm hover:bg-marinho hover:text-white; }
+.contador-btn { @apply w-11 text-lg font-semibold text-marinho hover:bg-fundo disabled:text-marinho/25 disabled:hover:bg-white; min-height: 44px; }
+.dia { @apply inline-flex min-h-[44px] min-w-[38px] px-1 items-center justify-center rounded-md border text-sm font-semibold transition-colors; }
+.dia-on { @apply border-marinho bg-marinho text-white; }
+.dia-off { @apply border-linha bg-white text-marinho/60 hover:border-marinho/40; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media print {
   .nao-imprimir { display: none !important; }
@@ -19,9 +27,3 @@ input, select, button { font: inherit; }
   .painel { break-inside: avoid; border-color: #bbb; }
   thead { display: table-header-group; }
 }
-.chip { @apply inline-flex items-center justify-center rounded-md px-2.5 sm:px-3 text-sm font-semibold text-marinho/75 transition-colors hover:bg-white hover:text-marinho; min-height: 44px; }
-.chip-ativo { @apply bg-marinho text-white shadow-sm hover:bg-marinho hover:text-white; }
-.contador-btn { @apply w-11 text-lg font-semibold text-marinho hover:bg-fundo disabled:text-marinho/25 disabled:hover:bg-white; min-height: 44px; }
-.dia { @apply inline-flex min-h-[44px] min-w-[38px] px-1 items-center justify-center rounded-md border text-sm font-semibold transition-colors; }
-.dia-on { @apply border-marinho bg-marinho text-white; }
-.dia-off { @apply border-linha bg-white text-marinho/60 hover:border-marinho/40; }

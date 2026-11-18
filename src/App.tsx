@@ -51,14 +51,24 @@ export function sanitizar(e: unknown): Entrada | null {
   };
 }
 
+const PASSOS = [
+  { n: 1, nome: 'Empresa', dica: 'Regime tributário e acordo coletivo.' },
+  { n: 2, nome: 'Funcionamento', dica: 'Dias e horários em que a empresa abre.' },
+  { n: 3, nome: 'Equipe', dica: 'Funções, quantidade de pessoas, jornada e salário.' },
+  { n: 4, nome: 'Pessoas por horário', dica: 'Quantas pessoas precisam estar trabalhando em cada faixa.' },
+  { n: 5, nome: 'Resultado', dica: 'Escalas de 44h, 42h e 40h, faltas, alternativas e custos.' },
+];
+
 export default function App() {
   const [entrada, setEntrada] = useState<Entrada>(carregar);
   const [exemplo, setExemplo] = useState<string | null>(null);
   const [erro, setErro] = useState('');
+  const [etapa, setEtapa] = useState(0); // 0 = tela inicial
   const arquivo = useRef<HTMLInputElement>(null);
   const resultados = useMemo(() => simularTodos(entrada), [entrada]);
 
   useEffect(() => { try { sessionStorage.setItem(CHAVE, JSON.stringify(entrada)); } catch { /* ignora */ } }, [entrada]);
+  useEffect(() => { window.scrollTo({ top: 0 }); document.getElementById('conteudo')?.focus({ preventScroll: true }); }, [etapa]);
 
   const mudar = (e: Entrada) => { setEntrada(e); setExemplo(null); };
   const exportar = () => {
@@ -74,87 +84,152 @@ export default function App() {
       if (f.size > 500_000) throw new Error();
       const dados = sanitizar(JSON.parse(await f.text()));
       if (!dados) throw new Error();
-      setEntrada(dados); setExemplo(null); setErro('');
+      setEntrada(dados); setExemplo(null); setErro(''); setEtapa(1);
     } catch { setErro('Arquivo inválido. Use um arquivo salvo por este simulador.'); }
   };
 
+  // O que impede avançar em cada passo.
+  const bloqueio: Record<number, string> = {};
+  if (!entrada.funcionamento.some((d) => d.aberto && d.periodos.some((p) => p.fim > p.ini))) bloqueio[2] = 'Marque pelo menos um dia aberto com horário válido.';
+  if (!entrada.funcoes.some((f) => f.quantidade > 0)) bloqueio[3] = 'Informe pelo menos uma pessoa na equipe.';
+  if (entrada.demandas.some((d) => d.fim <= d.ini)) bloqueio[4] = 'Há faixa de horário com o fim antes do início.';
+  const motivo = bloqueio[etapa];
+
+  const inputArquivo = (
+    <input ref={arquivo} type="file" accept="application/json,.json" className="hidden" aria-label="Abrir arquivo de simulação"
+      onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); e.target.value = ''; }} />
+  );
+
+  if (etapa === 0) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-marinho text-white">
+        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-4 py-12 sm:px-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">ContaD Assessoria Contábil</p>
+          <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">ContaD<br />Simulador de Escalas</h1>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/85">
+            Planeje a mudança da escala 6x1 para 5x2. Compare 44h, 42h e 40h por semana, veja onde vai faltar gente e quanto custa resolver.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <button type="button" autoFocus className="botao min-h-[56px] bg-white px-8 text-lg text-marinho hover:bg-white/90"
+              onClick={() => setEtapa(1)}>
+              Começar
+            </button>
+            {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
+            {inputArquivo}
+          </div>
+          {erro && <p role="alert" className="mt-3 font-semibold text-[#ffb4a8]">{erro}</p>}
+
+          <ol className="mt-10 grid gap-2 sm:grid-cols-5">
+            {PASSOS.map((p) => (
+              <li key={p.n} className="flex items-center gap-3 rounded-md border border-white/15 px-3 py-2 sm:block sm:py-3">
+                <span className="text-sm font-bold text-white/60">{p.n}</span>
+                <p className="font-semibold">{p.nome}</p>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-8 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-white/75">Ou veja um exemplo com dados fictícios:</span>
+            {EXEMPLOS.map((x) => (
+              <button key={x.id} type="button" title={x.descricao}
+                className="min-h-[44px] rounded-md border border-white/30 px-3 font-semibold text-white hover:bg-white/10"
+                onClick={() => { setEntrada(structuredClone(x.entrada)); setExemplo(x.id); setEtapa(1); }}>{x.nome}</button>
+            ))}
+          </div>
+        </main>
+        <footer className="mx-auto w-full max-w-3xl px-4 pb-6 text-sm text-white/60 sm:px-6">
+          Ferramenta de planejamento. Os dados ficam só neste navegador, nesta aba.
+        </footer>
+      </div>
+    );
+  }
+
+  const passo = PASSOS[etapa - 1];
   return (
     <div className="min-h-dvh">
-      <header className="bg-marinho text-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-xl font-extrabold tracking-tight">ContaD</p>
-            <h1 className="text-base font-medium text-white/85">Simulador de escalas: 44h, 42h e 40h</h1>
-          </div>
-          <div className="nao-imprimir flex flex-wrap gap-2">
-            {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={exportar}>Salvar arquivo</button>}
-            {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir arquivo</button>}
-            <input ref={arquivo} type="file" accept="application/json,.json" className="hidden" aria-label="Abrir arquivo de simulação"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); e.target.value = ''; }} />
-            {!PREVIA && <button type="button" className="botao bg-white text-marinho hover:bg-white/90" onClick={() => window.print()}>Imprimir ou PDF</button>}
+      <header className="nao-imprimir sticky top-0 z-20 bg-marinho text-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <button type="button" className="text-left" onClick={() => setEtapa(0)} aria-label="Voltar à tela inicial">
+            <span className="block text-lg font-extrabold leading-tight tracking-tight">ContaD</span>
+            <span className="block text-sm text-white/75">Simulador de Escalas</span>
+          </button>
+          <div className="flex flex-wrap justify-end gap-2">
+            {!PREVIA && <button type="button" className="botao border border-white/40 text-sm text-white hover:bg-white/10" onClick={exportar}>Salvar</button>}
+            {!PREVIA && etapa === 5 && <button type="button" className="botao bg-white text-sm text-marinho hover:bg-white/90" onClick={() => window.print()}>Imprimir ou PDF</button>}
           </div>
         </div>
+        <nav aria-label="Passos" className="mx-auto max-w-5xl px-4 pb-3 sm:px-6">
+          <ol className="flex gap-1">
+            {PASSOS.map((p) => {
+              const feito = p.n < etapa, atual = p.n === etapa;
+              return (
+                <li key={p.n} className="min-w-0 flex-1">
+                  <button type="button" aria-current={atual ? 'step' : undefined} onClick={() => setEtapa(p.n)}
+                    className="group block w-full text-left">
+                    <span className={`block h-1.5 rounded-full ${atual || feito ? 'bg-white' : 'bg-white/25'}`} />
+                    <span className={`mt-1 block truncate text-xs ${atual ? 'font-bold text-white' : 'text-white/65 group-hover:text-white'}`}>
+                      <span className="sm:hidden">{p.n}</span><span className="hidden sm:inline">{p.n}. {p.nome}</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <section className="nao-imprimir mb-6">
-          <p className="max-w-3xl text-[17px] leading-relaxed">
-            Informe o funcionamento, a equipe e quantas pessoas precisa em cada horário. O simulador monta a escala de cada cenário,
-            desconta os intervalos e mostra onde vai faltar gente e quanto custa resolver.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="text-sm font-medium">Ver um exemplo (dados fictícios):</span>
-            <div role="radiogroup" aria-label="Exemplos" className="inline-flex flex-wrap gap-1 rounded-lg bg-white p-1 ring-1 ring-linha">
-              {EXEMPLOS.map((x) => (
-                <button key={x.id} type="button" role="radio" aria-checked={exemplo === x.id} title={x.descricao}
-                  className={`chip ${exemplo === x.id ? 'chip-ativo' : ''}`}
-                  onClick={() => { setEntrada(structuredClone(x.entrada)); setExemplo(x.id); }}>{x.nome}</button>
-              ))}
-            </div>
-            <button type="button" className="min-h-[44px] px-1 text-sm font-semibold text-marinho-500 underline underline-offset-2 hover:text-marinho"
-              onClick={() => { setEntrada(structuredClone(ENTRADA_VAZIA)); setExemplo(null); }}>Começar do zero</button>
-          </div>
-          {exemplo && <p className="mt-2 text-sm font-semibold text-[#7a4f0c]">Dados fictícios para demonstração.</p>}
-          {erro && <p role="alert" className="mt-2 text-sm font-semibold text-falta">{erro}</p>}
-        </section>
+      <main id="conteudo" tabIndex={-1} className={`mx-auto px-4 py-6 outline-none sm:px-6 ${etapa === 5 ? 'max-w-5xl' : 'max-w-2xl'} pb-28`}>
+        <p className="nao-imprimir text-sm font-semibold text-marinho/60">Passo {etapa} de {PASSOS.length}</p>
+        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{passo.nome}</h1>
+        <p className="mt-1 text-marinho/75">{passo.dica}</p>
+        {exemplo && <p className="mt-2 text-sm font-semibold text-[#7a4f0c]">Dados fictícios para demonstração.</p>}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-          <div className="nao-imprimir min-w-0"><Formulario entrada={entrada} mudar={mudar} /></div>
-          <div className="min-w-0"><Resultado entrada={entrada} resultados={resultados} /></div>
+        <div className="mt-5">
+          {etapa < 5 ? <Formulario entrada={entrada} mudar={mudar} passo={etapa} /> : <Resultado entrada={entrada} resultados={resultados} />}
         </div>
 
-        <section className="painel mt-6 p-4 sm:p-5">
-          <h2 className="text-lg font-bold">Regras usadas</h2>
-          <p className="mt-1 text-sm text-marinho/70">Versão {VERSAO_REGRAS.split('-').reverse().join('/')}. Regras pendentes ainda não foram conferidas pela ContaD e servem como hipótese de planejamento.</p>
-          <table className="mt-3 w-full text-sm">
-            <thead><tr className="border-b border-linha text-left"><th className="py-2 pr-2">Cenário</th><th className="py-2 pr-2">Limites</th><th className="py-2 pr-2">Fonte</th><th className="py-2">Status</th></tr></thead>
-            <tbody>
-              {CENARIOS.map((c) => (
-                <tr key={c.id} className="border-b border-linha align-top">
-                  <td className="py-2 pr-2 font-semibold">{c.id}h</td>
-                  <td className="py-2 pr-2">{c.limiteSemanalMin / 60}h/semana, até {Math.floor(c.limiteDiarioMin / 60)}h{String(c.limiteDiarioMin % 60).padStart(2, '0')}/dia, {c.folgasSemana} folga(s), divisor {c.divisor}</td>
-                  <td className="py-2 pr-2">{c.fonte}</td>
-                  <td className="py-2 font-semibold text-[#7a4f0c]">{c.status === 'pendente' ? 'Pendente' : 'Validada'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <h3 className="mt-4 font-semibold">Outros pontos da EC 141/2026 (a conferir)</h3>
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
-            {OBSERVACOES_EC.map((o) => <li key={o}>{o}</li>)}
-          </ul>
-        </section>
+        {etapa === 5 && (
+          <section className="painel mt-6 p-4 sm:p-5">
+            <h2 className="text-lg font-bold">Regras usadas</h2>
+            <p className="mt-1 text-sm text-marinho/70">Versão {VERSAO_REGRAS.split('-').reverse().join('/')}. Regras pendentes ainda não foram conferidas pela ContaD e servem como hipótese de planejamento.</p>
+            <div className="overflow-x-auto">
+              <table className="mt-3 w-full text-sm">
+                <thead><tr className="border-b border-linha text-left"><th className="py-2 pr-2">Cenário</th><th className="py-2 pr-2">Limites</th><th className="py-2 pr-2">Fonte</th><th className="py-2">Status</th></tr></thead>
+                <tbody>
+                  {CENARIOS.map((c) => (
+                    <tr key={c.id} className="border-b border-linha align-top">
+                      <td className="py-2 pr-2 font-semibold">{c.id}h</td>
+                      <td className="py-2 pr-2">{c.limiteSemanalMin / 60}h/semana, até {Math.floor(c.limiteDiarioMin / 60)}h{String(c.limiteDiarioMin % 60).padStart(2, '0')}/dia, {c.folgasSemana} folga(s), divisor {c.divisor}</td>
+                      <td className="py-2 pr-2">{c.fonte}</td>
+                      <td className="py-2 font-semibold text-[#7a4f0c]">{c.status === 'pendente' ? 'Pendente' : 'Validada'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <h3 className="mt-4 font-semibold">Outros pontos da EC 141/2026 (a conferir)</h3>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+              {OBSERVACOES_EC.map((o) => <li key={o}>{o}</li>)}
+            </ul>
+          </section>
+        )}
 
-        <a href="#resultado" className="nao-imprimir fixed inset-x-4 bottom-4 z-10 flex min-h-[48px] items-center justify-between rounded-md bg-marinho px-4 font-semibold text-white lg:hidden">
-          <span>42h: cobertura {(resultados[1].indiceGeral * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</span>
-          <span>Ver resultado</span>
-        </a>
-
-        <footer className="mt-6 pb-24 lg:pb-8 text-sm text-marinho/75">
+        <footer className="mt-6 text-sm text-marinho/75">
           <p>Ferramenta de planejamento. Os resultados dependem dos dados informados, do regime contratual, das normas vigentes e dos instrumentos coletivos aplicáveis.</p>
-          <p className="mt-1">Os dados ficam só neste navegador, nesta aba. Nada é enviado a servidores.</p>
         </footer>
       </main>
+
+      <div className="nao-imprimir fixed inset-x-0 bottom-0 z-20 border-t border-linha bg-white/95 backdrop-blur">
+        <div className={`mx-auto flex items-center gap-3 px-4 py-3 sm:px-6 ${etapa === 5 ? 'max-w-5xl' : 'max-w-2xl'}`}>
+          <button type="button" className="botao-sec" onClick={() => setEtapa(etapa - 1)}>Voltar</button>
+          {motivo && <p className="min-w-0 flex-1 text-sm font-semibold text-falta">{motivo}</p>}
+          {!motivo && <span className="flex-1" />}
+          {etapa < 5
+            ? <button type="button" className="botao-principal px-6" disabled={!!motivo} aria-disabled={!!motivo}
+                onClick={() => setEtapa(etapa + 1)}>{etapa === 4 ? 'Ver resultado' : 'Continuar'}</button>
+            : <button type="button" className="botao-principal px-6" onClick={() => setEtapa(1)}>Ajustar dados</button>}
+        </div>
+      </div>
     </div>
   );
 }
