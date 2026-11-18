@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ENTRADA_VAZIA, EXEMPLOS } from './dados/exemplos';
+import { ENTRADA_VAZIA } from './dados/exemplos';
 import { CENARIOS, OBSERVACOES_EC, VERSAO_REGRAS } from './motor/regras';
 import { simularTodos } from './motor/simular';
 import type { Entrada } from './motor/tipos';
@@ -107,41 +107,29 @@ export default function App() {
   if (etapa === 0) {
     return (
       <div className="flex min-h-dvh flex-col bg-marinho text-white">
-        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-4 py-12 sm:px-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">ContaD Assessoria Contábil</p>
-          <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">ContaD<br />Simulador de Escalas</h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/85">
+        <header className="flex justify-center px-4 pt-8 sm:pt-12">
+          <p className="text-center leading-none">
+            <span className="block text-[1.75rem] font-extrabold tracking-[-0.02em] sm:text-[2rem]">ContaD</span>
+            <span className="mt-1.5 block text-[0.95rem] font-medium text-white/80 sm:text-base">Assessoria Contábil</span>
+          </p>
+        </header>
+        <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-4 pb-16 pt-10 text-center sm:px-6">
+          <h1 className="text-balance text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-[3.5rem]">Simulador de Escalas</h1>
+          <p className="mt-7 max-w-[36rem] text-pretty text-lg leading-[1.55] text-white/90 sm:mt-8 sm:text-[1.3rem]">
             Planeje a mudança da escala 6x1 para 5x2. Compare 44h, 42h e 40h por semana, veja onde vai faltar gente e quanto custa resolver.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <button type="button" autoFocus className="botao min-h-[56px] bg-white px-8 text-lg text-marinho hover:bg-white/90"
+          <div className="mt-10 flex w-full flex-col items-center gap-3 sm:mt-12 sm:w-auto sm:flex-row">
+            <button type="button" autoFocus
+              className="botao min-h-[60px] w-full min-w-[15rem] bg-white px-10 text-xl text-marinho transition-transform hover:bg-white/90 active:scale-[0.98] sm:w-auto"
               onClick={() => { if (exemplo) { setEntrada(structuredClone(ENTRADA_VAZIA)); setExemplo(null); } setEtapa(1); }}>
               Começar
             </button>
-            {!PREVIA && <button type="button" className="botao border border-white/40 text-white hover:bg-white/10" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
+            {!PREVIA && <button type="button" className="botao min-h-[60px] w-full border border-white/40 px-6 text-white hover:bg-white/10 sm:w-auto" onClick={() => arquivo.current?.click()}>Abrir simulação salva</button>}
             {inputArquivo}
           </div>
-          {erro && <p role="alert" className="mt-3 font-semibold text-[#ffb4a8]">{erro}</p>}
-
-          <ol className="mt-10 grid gap-2 sm:grid-cols-5">
-            {PASSOS.map((p) => (
-              <li key={p.n} className="flex items-center gap-3 rounded-md border border-white/15 px-3 py-2 sm:block sm:py-3">
-                <span className="text-sm font-bold text-white/60">{p.n}</span>
-                <p className="font-semibold">{p.nome}</p>
-              </li>
-            ))}
-          </ol>
-
-          <div className="mt-8 flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-white/75">Ou veja um exemplo com dados fictícios:</span>
-            {EXEMPLOS.map((x) => (
-              <button key={x.id} type="button" title={x.descricao}
-                className="min-h-[44px] rounded-md border border-white/30 px-3 font-semibold text-white hover:bg-white/10"
-                onClick={() => { setEntrada(structuredClone(x.entrada)); setExemplo(x.id); setEtapa(1); }}>{x.nome}</button>
-            ))}
-          </div>
+          {erro && <p role="alert" className="mt-4 font-semibold text-[#ffb4a8]">{erro}</p>}
         </main>
-        <footer className="mx-auto w-full max-w-3xl px-4 pb-6 text-sm text-white/60 sm:px-6">
+        <footer className="px-4 pb-6 text-center text-sm text-white/70 sm:px-6">
           Ferramenta de planejamento. Os dados ficam só neste navegador, nesta aba.
         </footer>
       </div>
