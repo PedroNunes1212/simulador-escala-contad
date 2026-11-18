@@ -114,7 +114,7 @@ export default function App() {
           </p>
         </header>
         <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-4 pb-16 pt-10 text-center sm:px-6">
-          <h1 className="text-balance text-[3rem] font-extrabold leading-[0.95] tracking-[-0.035em] sm:text-[5.5rem] lg:text-[6.5rem]">Simulador de Escalas</h1>
+          <h1 className="text-balance text-[2.25rem] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-[3.5rem]">Simulador de Escalas</h1>
           <p className="mt-7 max-w-[36rem] text-pretty text-lg leading-[1.55] text-white/90 sm:mt-8 sm:text-[1.3rem]">
             Planeje a mudança da escala 6x1 para 5x2. Compare 44h, 42h e 40h por semana, veja onde vai faltar gente e quanto custa resolver.
           </p>
