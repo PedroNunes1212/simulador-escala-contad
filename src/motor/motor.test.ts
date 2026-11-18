@@ -77,6 +77,13 @@ describe('cobertura', () => {
     expect(cob.excessoMin).toBe(120);
     expect(cob.deficitMin).toBe(240);
   });
+  it('demanda fora do horário aberto não vira falta', () => {
+    const func = segSab(9 * 60, 19 * 60); func[5] = aberto(9 * 60, 14 * 60);
+    const g = gradeNecessidade('cx', [{ funcaoId: 'cx', dias: [0, 1, 2, 3, 4, 5], ini: 9 * 60, fim: 19 * 60, pessoas: 1 }], func);
+    expect(g[5].slice(14 * 60, 19 * 60).every((x) => x === 0)).toBe(true);
+    expect(g[5][13 * 60]).toBe(1);
+    expect(g[0][18 * 60]).toBe(1);
+  });
   it('funções não se substituem', () => {
     const nec = gradeNecessidade('b', [], func);
     const outra: Pessoa = { id: 'x', nome: 'x', funcaoId: 'a', semanalMin: 2640,

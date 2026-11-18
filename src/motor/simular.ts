@@ -119,7 +119,7 @@ export function alternativas(entrada: Entrada, f: Funcao, cenarioBase: Cenario, 
     const r = escalaFuncao(entrada, f, cenario, Array.from({ length: k }, () => ({ semanalMin: jornadaCheia })));
     if (r.cobertura.deficitMin < deficit || k === 3) {
       out.push({
-        tipo: 'integral', titulo: `Contratar ${k} pessoa(s) em jornada integral`, deficitRestanteMin: r.cobertura.deficitMin,
+        tipo: 'integral', titulo: `Contratar ${k} ${k === 1 ? 'pessoa' : 'pessoas'} em jornada integral`, deficitRestanteMin: r.cobertura.deficitMin,
         custoAdicionalMensal: temSal ? r2(custoMensal(f.salario, entrada.regime, p).total * k) : null,
         detalhe: `Mesmo salário médio da função (${duracao(jornadaCheia)}/semana).`, ressalvas: [],
       });

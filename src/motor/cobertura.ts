@@ -12,9 +12,13 @@ export function gradeNecessidade(funcaoId: string, demandas: Demanda[], func: Di
       for (const p of func[dia].periodos) for (let s = p.ini / SLOT; s < p.fim / SLOT; s++) g[dia][s] = 1;
       continue;
     }
+    // Só conta a demanda dentro do horário aberto: fora dele o gerador não escala ninguém.
     for (const d of minhas) {
       if (!d.dias.includes(dia)) continue;
-      for (let s = Math.floor(d.ini / SLOT); s < Math.ceil(d.fim / SLOT); s++) g[dia][s] = Math.max(g[dia][s], d.pessoas);
+      for (const p of func[dia].periodos) {
+        const ini = Math.max(d.ini, p.ini), fim = Math.min(d.fim, p.fim);
+        for (let s = Math.floor(ini / SLOT); s < Math.ceil(fim / SLOT); s++) g[dia][s] = Math.max(g[dia][s], d.pessoas);
+      }
     }
   }
   return g;
