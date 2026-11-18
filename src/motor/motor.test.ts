@@ -3,7 +3,7 @@ import { avaliarCobertura, gradeNecessidade } from './cobertura';
 import { custoMensal, custoHoraExtraMensal } from './custos';
 import { gerarEscala } from './gerador';
 import { CENARIOS, ENCARGOS_PADRAO, intervaloMinimo } from './regras';
-import { alternativas, faltasInterjornada, horasSemana, simularCenario } from './simular';
+import { alternativas, faltasInterjornada, horasSemana, maiorDescansoSemanal, simularCenario } from './simular';
 import { duracao, hhmm, paraMinutos } from './tempo';
 import type { DiaFuncionamento, Entrada, Pessoa } from './tipos';
 
@@ -176,5 +176,47 @@ describe('gerador', () => {
     const r = gerarEscala({ funcaoId: 'at', nomeFuncao: 'A', pessoas: [{ id: '1', nome: '1', semanalMin: 2640 }],
       cenario: C44, funcionamento: base.funcionamento, necessidade: gradeNecessidade('at', [], base.funcionamento) });
     expect(r[0].turnos.some((t) => t.dia === 6)).toBe(false);
+  });
+});
+
+describe('revisão de 18/11', () => {
+  const farmacia = (ini: number, fim: number) => [...Array(7)].map(() => aberto(ini, fim));
+  it('descanso semanal de 35h com loja aberta das 7h às 22h, 6x1', () => {
+    const e: Entrada = { regime: 'simples', funcionamento: farmacia(420, 1320),
+      funcoes: [{ id: 'b', nome: 'B', quantidade: 6, salario: 0, jornadaContratualMin: 2640 }],
+      demandas: [{ funcaoId: 'b', dias: [0, 1, 2, 3, 4, 5, 6], ini: 420, fim: 1320, pessoas: 2 }] };
+    for (const c of CENARIOS) {
+      const r = simularCenario(e, c);
+      for (const p of r.pessoas) expect(maiorDescansoSemanal(p)).toBeGreaterThanOrEqual(35 * 60);
+      expect(r.alertas.some((a) => a.texto.includes('35h seguidas'))).toBe(false);
+    }
+  });
+  it('acusa descanso semanal menor que 35h', () => {
+    const t = (dia: number, ini: number, fim: number) => ({ dia, ini, fim, intervaloIni: null, intervaloMin: 60, trabalhoMin: fim - ini - 60 });
+    const p: Pessoa = { id: 'x', nome: 'x', funcaoId: 'b', semanalMin: 2640,
+      turnos: [t(0, 420, 860), t(1, 420, 860), t(2, 420, 860), t(3, 420, 860), t(4, 420, 860), t(5, 880, 1320)] };
+    // sábado sai 22h, domingo folga, segunda entra 7h: 2h + 24h + 7h = 33h
+    expect(maiorDescansoSemanal(p)).toBe(33 * 60);
+  });
+  it('pausa no funcionamento: ninguém trabalha com a empresa fechada', () => {
+    const dia: DiaFuncionamento = { aberto: true, periodos: [{ ini: 480, fim: 720 }, { ini: 840, fim: 1080 }] };
+    const e: Entrada = { regime: 'simples', funcionamento: [...Array(5)].map(() => dia).concat([fechado, fechado]),
+      funcoes: [{ id: 'a', nome: 'A', quantidade: 2, salario: 0, jornadaContratualMin: 2400 }], demandas: [] };
+    const r = simularCenario(e, C40);
+    for (const p of r.pessoas) for (const t of p.turnos) {
+      for (let m = t.ini; m < t.fim; m++) {
+        const noIntervalo = t.intervaloIni !== null && m >= t.intervaloIni && m < t.intervaloIni + t.intervaloMin;
+        if (!noIntervalo) expect(dia.periodos.some((x) => m >= x.ini && m < x.fim)).toBe(true);
+      }
+      expect(t.trabalhoMin).toBe(480);
+    }
+    expect(r.cobertura[0].deficitMin).toBe(0);
+  });
+  it('Simples anexo IV paga INSS patronal e RAT, mas não terceiros', () => {
+    const iv = custoMensal(2000, 'simples_anexo_iv', ENCARGOS_PADRAO);
+    expect(iv.cpp).toBeGreaterThan(0);
+    expect(iv.rat).toBeGreaterThan(0);
+    expect(iv.terceiros).toBe(0);
+    expect(custoMensal(2000, 'presumido_real', ENCARGOS_PADRAO).terceiros).toBeGreaterThan(0);
   });
 });

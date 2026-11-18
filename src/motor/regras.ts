@@ -1,7 +1,7 @@
 import type { Cenario, Entrada, ParametrosEncargos } from './tipos';
 
 // Regras versionadas. "pendente" = ainda não conferida pela ContaD.
-export const VERSAO_REGRAS = '2026-11-17';
+export const VERSAO_REGRAS = '2026-11-18';
 
 export const CENARIOS: Cenario[] = [
   {
@@ -44,6 +44,10 @@ export function intervaloMinimo(trabalhoMin: number): number {
 export const LIMITE_DIARIO_SEM_ACORDO = 8 * 60;
 /** Descanso mínimo entre duas jornadas (CLT art. 66). */
 export const INTERJORNADA_MIN = 11 * 60;
+/** Descanso semanal: 24h de folga + 11h entre jornadas = 35h seguidas (CLT arts. 66 e 67). */
+export const DESCANSO_SEMANAL_MIN = 35 * 60;
+/** Intervalo máximo sem acordo escrito (CLT art. 71). */
+export const INTERVALO_MAX = 2 * 60;
 /** Teto diário com horas extras: jornada + no máximo 2h, até 10h (CLT art. 59). */
 export const TETO_DIARIO_COM_EXTRA = 10 * 60;
 
