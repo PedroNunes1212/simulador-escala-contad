@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { linkWhatsapp, mensagemDp } from '../dados/mensagemDp';
 import { relatorioXml, type ContatoRelatorio } from '../dados/relatorioXml';
 import { OBSERVACOES_EC, VERSAO_REGRAS } from '../motor/regras';
 import { horasSemana } from '../motor/simular';
@@ -70,11 +71,23 @@ export function Relatorio({ entrada, resultados, onVoltar, podeBaixar }: {
               <textarea id="r-duvida" rows={3} className="campo" placeholder="Ex.: posso manter a loja aberta no sábado à tarde com a equipe atual?" {...campo('duvida')} />
             </div>
           </div>
+          <ol className="mt-4 space-y-3">
+            <li className="flex flex-wrap items-center gap-3">
+              <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marinho text-sm font-bold text-white">1</span>
+              {podeBaixar
+                ? <button type="button" className="botao-sec" onClick={() => window.print()}>Salvar o relatório em PDF</button>
+                : <span className="text-sm text-marinho/70">Salve o relatório em PDF (na versão publicada; nesta prévia o navegador bloqueia).</span>}
+            </li>
+            <li className="flex flex-wrap items-center gap-3">
+              <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marinho text-sm font-bold text-white">2</span>
+              <a className="botao-principal" target="_blank" rel="noopener noreferrer" href={linkWhatsapp(mensagemDp(entrada, resultados, contato))}>
+                Enviar pelo WhatsApp do DP
+              </a>
+            </li>
+          </ol>
           <p className="mt-3 text-sm text-marinho/70">
-            {podeBaixar
-              ? <>Depois toque em <strong>Salvar em PDF</strong> (o PDF é para ler; o XML é para o sistema da ContaD) e envie ao Departamento Pessoal.</>
-              : 'Nesta prévia o navegador bloqueia download e impressão. Na versão publicada aparecem os botões Salvar em PDF e Baixar XML.'}
-            {' '}Os dados não são enviados automaticamente para lugar nenhum.
+            O WhatsApp abre numa nova aba com um resumo já escrito. Anexe o PDF na conversa.
+            Nada é enviado sem você tocar em enviar.
           </p>
         </section>
 
