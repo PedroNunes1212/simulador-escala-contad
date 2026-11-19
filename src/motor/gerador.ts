@@ -6,10 +6,12 @@ const PASSO = 15; // entradas e intervalos começam em múltiplos de 15 min
 export interface PedidoEscala {
   funcaoId: string;
   nomeFuncao: string;
-  pessoas: { id: string; nome: string; semanalMin: number; extra?: boolean }[];
+  pessoas: { id: string; nome: string; semanalMin: number; sexo?: 'M' | 'F'; extra?: boolean }[];
   cenario: Cenario;
   funcionamento: DiaFuncionamento[];
   necessidade: number[][]; // [dia][minuto]
+  /** Máximo de pessoas trabalhando no domingo (rodízio de folgas aos domingos). Sem valor, sem limite. */
+  limiteDomingo?: number;
 }
 
 export function janelaDoDia(d: DiaFuncionamento): { ini: number; fim: number } | null {
@@ -96,14 +98,16 @@ export function gerarEscala(p: PedidoEscala): Pessoa[] {
   // Folga isolada: descanso = (24h - saída) + 24h de folga + entrada da volta. Precisa ser >= 35h.
   const FOLGA_E_DOIS_DIAS = 2 * 1440;
 
+  let noDomingo = 0;
   pessoas.forEach((pessoa, k) => {
-    const diasTrabalho = Math.min(7 - cenario.folgasSemana, diasAbertos.length);
+    const dias = noDomingo >= (p.limiteDomingo ?? Infinity) ? diasAbertos.filter((d) => d !== 6) : diasAbertos;
+    const diasTrabalho = Math.min(7 - cenario.folgasSemana, dias.length);
     if (diasTrabalho === 0) return;
     const semanal = Math.min(pessoa.semanalMin, cenario.limiteSemanalMin);
     const trabalhoDia = Math.min(cenario.limiteDiarioMin, Math.floor(semanal / diasTrabalho));
 
     // Folgas: trabalha nos dias com maior necessidade ainda não atendida; empate gira entre pessoas (alterna domingos).
-    const escolhidos = [...diasAbertos]
+    const escolhidos = [...dias]
       .sort((a, b) => {
         const ra = demandaDia[a] - capacidadeDia[a], rb = demandaDia[b] - capacidadeDia[b];
         if (rb !== ra) return rb - ra;
@@ -140,6 +144,7 @@ export function gerarEscala(p: PedidoEscala): Pessoa[] {
       if (turno.intervaloIni !== null) for (let m = turno.intervaloIni; m < turno.intervaloIni + turno.intervaloMin; m++) cobertura[dia][m]--;
       capacidadeDia[dia] += turno.fim - turno.ini;
       pessoa.turnos.push(turno);
+      if (dia === 6) noDomingo++;
       porDia.set(dia, turno);
     }
   });

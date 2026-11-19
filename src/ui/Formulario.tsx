@@ -2,6 +2,8 @@ import { DIAS, type Demanda, type DiaFuncionamento, type Entrada, type Funcao, t
 import { resumoFuncionamento } from './analise';
 import { BotaoAdicionar, BotaoRemover, CampoHora, Contador, Segmentado } from './controles';
 
+const mulheresDe = (f: Funcao) => Math.min(f.mulheres ?? 0, f.quantidade);
+
 interface Props { entrada: Entrada; mudar: (e: Entrada) => void; passo?: number }
 
 const REGIMES: { id: Regime; nome: string }[] = [
@@ -118,6 +120,11 @@ export function Formulario({ entrada, mudar, passo }: Props) {
           opcoes={[{ valor: 'nao', nome: 'Não ou não sei' }, { valor: 'sim', nome: 'Sim' }]}
           onChange={(v) => mudar({ ...entrada, acordoAcima8h: v === 'sim' })} />
         <p className="mt-2 text-sm text-marinho/70">Com acordo, as 42h podem ser 5 dias de 8h24. Sem acordo, o limite é 8h por dia.</p>
+        <p className="rotulo mt-4">Divisor da hora extra no cenário de 44h</p>
+        <Segmentado rotulo="Divisor da hora extra no cenário de 44h" valor={entrada.divisor44 ?? 210}
+          opcoes={[{ valor: 210, nome: '210 (padrão ContaD)' }, { valor: 220, nome: '220' }]}
+          onChange={(v) => mudar({ ...entrada, divisor44: v as 210 | 220 })} />
+        <p className="mt-2 text-sm text-marinho/70">Valor da hora = salário ÷ divisor. Nos cenários de 42h e 40h o divisor é 210 e 200.</p>
       </Secao>
       )}
 
@@ -171,9 +178,18 @@ export function Formulario({ entrada, mudar, passo }: Props) {
                   {entrada.funcoes.length > 1 && <BotaoRemover rotulo={`Remover função ${f.nome}`} onClick={() => removerFuncao(f.id)} />}
                 </div>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="rotulo" htmlFor={`q-${f.id}`}>Pessoas</label>
-                    <Contador id={`q-${f.id}`} rotulo="pessoas" valor={f.quantidade} min={0} max={50} onChange={(n) => setFuncao(f.id, { quantidade: n })} />
+                  <div className="flex flex-wrap gap-4">
+                    <div>
+                      <label className="rotulo" htmlFor={`qh-${f.id}`}>Homens</label>
+                      <Contador id={`qh-${f.id}`} rotulo={`homens em ${f.nome}`} valor={f.quantidade - mulheresDe(f)} min={0} max={50 - mulheresDe(f)}
+                        onChange={(n) => setFuncao(f.id, { quantidade: n + mulheresDe(f), mulheres: mulheresDe(f) })} />
+                    </div>
+                    <div>
+                      <label className="rotulo" htmlFor={`qm-${f.id}`}>Mulheres</label>
+                      <Contador id={`qm-${f.id}`} rotulo={`mulheres em ${f.nome}`} valor={mulheresDe(f)} min={0} max={50 - (f.quantidade - mulheresDe(f))}
+                        onChange={(n) => setFuncao(f.id, { quantidade: f.quantidade - mulheresDe(f) + n, mulheres: n })} />
+                    </div>
+                    <p className="w-full text-sm text-marinho/70">Por mês, cada homem folga 1 domingo e cada mulher folga 2 (a cada 15 dias).</p>
                   </div>
                   <div>
                     <label className="rotulo" htmlFor={`s-${f.id}`}>Salário médio (R$)</label>

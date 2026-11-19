@@ -1,12 +1,12 @@
 import type { Cenario, Entrada, ParametrosEncargos } from './tipos';
 
 // Regras versionadas. "pendente" = ainda não conferida pela ContaD.
-export const VERSAO_REGRAS = '2026-11-18';
+export const VERSAO_REGRAS = '2026-11-19';
 
 export const CENARIOS: Cenario[] = [
   {
     id: '44', nome: '44h · 6x1 (regra até 15/12/2026)',
-    limiteSemanalMin: 44 * 60, limiteDiarioMin: 8 * 60, folgasSemana: 1, divisor: 220,
+    limiteSemanalMin: 44 * 60, limiteDiarioMin: 8 * 60, folgasSemana: 1, divisor: 210,
     status: 'pendente', fonte: 'CF art. 7º, XIII (redação anterior à EC 141/2026); CLT art. 58',
   },
   {
@@ -52,7 +52,25 @@ export const INTERVALO_MAX = 2 * 60;
 export const TETO_DIARIO_COM_EXTRA = 10 * 60;
 
 /** Aplica ao cenário as condições informadas pela empresa (hoje: acordo para mais de 8h/dia). */
+export const DIVISOR_44_PADRAO = 210;
+
+/**
+ * Folgas obrigatórias no domingo num ciclo de 4 semanas (um mês): homem 1, mulher 2 (a cada 15 dias, CLT art. 386).
+ * Pedido da ContaD em 19/11/2026. Pendente: no comércio a Lei 10.101/2000, art. 6º, exige 1 domingo a cada 3 semanas.
+ */
+export const REGRA_DOMINGO = {
+  cicloSemanas: 4, folgasHomem: 1, folgasMulher: 2, status: 'pendente' as const,
+  fonte: 'Pedido ContaD (19/11/2026); CLT art. 386 (mulher, a cada 15 dias); a conferir: Lei 10.101/2000, art. 6º (comércio)',
+};
+
+/** Máximo de pessoas que podem trabalhar em TODOS os domingos com rodízio, respeitando as folgas acima. */
+export function limiteDomingo(homens: number, mulheres: number): number {
+  const { cicloSemanas: c, folgasHomem: fh, folgasMulher: fm } = REGRA_DOMINGO;
+  return Math.floor((homens * (c - fh) + mulheres * (c - fm)) / c);
+}
+
 export function cenarioEfetivo(c: Cenario, entrada: Entrada): Cenario {
+  if (c.id === '44') c = { ...c, divisor: entrada.divisor44 ?? DIVISOR_44_PADRAO };
   if (c.limiteDiarioMin > LIMITE_DIARIO_SEM_ACORDO && !entrada.acordoAcima8h) {
     return { ...c, limiteDiarioMin: LIMITE_DIARIO_SEM_ACORDO };
   }

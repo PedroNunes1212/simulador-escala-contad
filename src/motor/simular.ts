@@ -1,29 +1,35 @@
 import { avaliarCobertura, gradeNecessidade } from './cobertura';
 import { custoHoraExtraMensal, custoMensal, salarioProporcional } from './custos';
 import { gerarEscala } from './gerador';
-import { CENARIOS, DESCANSO_SEMANAL_MIN, ENCARGOS_PADRAO, INTERJORNADA_MIN, LIMITE_DIARIO_SEM_ACORDO, TETO_DIARIO_COM_EXTRA, cenarioEfetivo } from './regras';
+import { CENARIOS, DESCANSO_SEMANAL_MIN, REGRA_DOMINGO, limiteDomingo, ENCARGOS_PADRAO, INTERJORNADA_MIN, LIMITE_DIARIO_SEM_ACORDO, TETO_DIARIO_COM_EXTRA, cenarioEfetivo } from './regras';
 import { duracao, hhmm } from './tempo';
 import { DIAS, type Alerta, type Cenario, type Entrada, type Funcao, type ParametrosEncargos, type Pessoa, type ResultadoCenario } from './tipos';
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
 function pessoasDaFuncao(f: Funcao, extras: { semanalMin: number }[] = []) {
-  const base = Array.from({ length: f.quantidade }, (_, i) => ({
-    id: `${f.id}-${i + 1}`, nome: `${f.nome} ${i + 1}`, semanalMin: f.jornadaContratualMin,
-  }));
+  const mulheres = Math.min(f.mulheres ?? 0, f.quantidade);
+  const base = Array.from({ length: f.quantidade }, (_, i) => {
+    const sexo: 'M' | 'F' = i < f.quantidade - mulheres ? 'M' : 'F';
+    return { id: `${f.id}-${i + 1}`, nome: `${f.nome} ${i + 1} (${sexo === 'F' ? 'mulher' : 'homem'})`, semanalMin: f.jornadaContratualMin, sexo };
+  });
+  // Nova contratação: sexo ainda não definido; conta pela regra mais branda (homem).
   const ext = extras.map((e, i) => ({
-    id: `${f.id}-novo-${i + 1}`, nome: `${f.nome} (nova contratação ${i + 1})`, semanalMin: e.semanalMin, extra: true,
+    id: `${f.id}-novo-${i + 1}`, nome: `${f.nome} (nova contratação ${i + 1})`, semanalMin: e.semanalMin, sexo: 'M' as const, extra: true,
   }));
   return [...base, ...ext];
 }
 
 function escalaFuncao(entrada: Entrada, f: Funcao, cenario: Cenario, extras: { semanalMin: number }[] = []) {
   const necessidade = gradeNecessidade(f.id, entrada.demandas, entrada.funcionamento);
+  const lista = pessoasDaFuncao(f, extras);
+  const mulheres = lista.filter((x) => x.sexo === 'F').length;
+  const limite = limiteDomingo(lista.length - mulheres, mulheres);
   const pessoas = gerarEscala({
-    funcaoId: f.id, nomeFuncao: f.nome, pessoas: pessoasDaFuncao(f, extras),
-    cenario, funcionamento: entrada.funcionamento, necessidade,
+    funcaoId: f.id, nomeFuncao: f.nome, pessoas: lista,
+    cenario, funcionamento: entrada.funcionamento, necessidade, limiteDomingo: limite,
   });
-  return { pessoas, cobertura: avaliarCobertura(f.id, necessidade, pessoas) };
+  return { pessoas, cobertura: avaliarCobertura(f.id, necessidade, pessoas), limiteDomingo: limite, total: lista.length };
 }
 
 export function horasSemana(p: Pessoa): number {
@@ -66,6 +72,11 @@ export function simularCenario(entrada: Entrada, cenarioBase: Cenario, p: Parame
     const r = escalaFuncao(entrada, f, cenario);
     pessoas.push(...r.pessoas);
     cobertura.push(r.cobertura);
+    const precisaDomingo = Math.max(0, ...(r.cobertura.necessarias[6] ?? []));
+    if (entrada.funcionamento[6]?.aberto && precisaDomingo > r.limiteDomingo && r.total > 0) {
+      const { cicloSemanas, folgasHomem, folgasMulher } = REGRA_DOMINGO;
+      alertas.push({ tipo: 'aviso', texto: `${f.nome}: no máximo ${r.limiteDomingo} de ${r.total} pessoa(s) podem trabalhar em cada domingo, porque em cada ${cicloSemanas} semanas o homem folga ${folgasHomem} domingo e a mulher folga ${folgasMulher} (a cada 15 dias). O domingo precisa de ${precisaDomingo}.` });
+    }
     if (f.salario > 0) folha += custoMensal(f.salario, entrada.regime, p).total * f.quantidade;
     for (const c of r.cobertura.periodosCriticos.slice(0, 6)) {
       alertas.push({ tipo: 'aviso', texto: `${f.nome}: falta ${c.falta} pessoa(s) ${DIAS[c.dia]} das ${hhmm(c.ini)} às ${hhmm(c.fim)}.` });

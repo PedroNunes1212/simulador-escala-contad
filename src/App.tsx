@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ENTRADA_VAZIA } from './dados/exemplos';
-import { CENARIOS, OBSERVACOES_EC, VERSAO_REGRAS } from './motor/regras';
+import { CENARIOS, OBSERVACOES_EC, VERSAO_REGRAS, cenarioEfetivo } from './motor/regras';
 import { simularTodos } from './motor/simular';
 import type { Entrada } from './motor/tipos';
 import { Formulario } from './ui/Formulario';
@@ -34,13 +34,14 @@ export function sanitizar(e: unknown): Entrada | null {
   const regimes = ['simples', 'simples_anexo_iv', 'presumido_real'];
   const funcoes = x.funcoes.slice(0, 20).map((f, i) => ({
     id: String(f?.id ?? `f${i}`).slice(0, 40), nome: String(f?.nome ?? 'Função').slice(0, 60),
-    quantidade: lim(f?.quantidade, 0, 50, 1), salario: lim(f?.salario, 0, 1_000_000, 0),
+    quantidade: lim(f?.quantidade, 0, 50, 1), mulheres: Math.min(lim(f?.mulheres, 0, 50, 0), lim(f?.quantidade, 0, 50, 1)), salario: lim(f?.salario, 0, 1_000_000, 0),
     jornadaContratualMin: lim(f?.jornadaContratualMin, 60, 2640, 2640),
   }));
   const ids = new Set(funcoes.map((f) => f.id));
   return {
     regime: regimes.includes(x.regime) ? x.regime : 'simples',
     acordoAcima8h: x.acordoAcima8h === true,
+    divisor44: x.divisor44 === 220 ? 220 : 210,
     funcionamento: x.funcionamento.map((d) => ({
       aberto: !!d?.aberto,
       periodos: (Array.isArray(d?.periodos) ? d.periodos : []).slice(0, 3)
@@ -204,7 +205,7 @@ export default function App() {
               <table className="mt-3 w-full text-sm">
                 <thead><tr className="border-b border-linha text-left"><th className="py-2 pr-2">Cenário</th><th className="py-2 pr-2">Limites</th><th className="py-2 pr-2">Fonte</th><th className="py-2">Status</th></tr></thead>
                 <tbody>
-                  {CENARIOS.map((c) => (
+                  {CENARIOS.map((c) => cenarioEfetivo(c, entrada)).map((c) => (
                     <tr key={c.id} className="border-b border-linha align-top">
                       <td className="py-2 pr-2 font-semibold">{c.id}h</td>
                       <td className="py-2 pr-2">{c.limiteSemanalMin / 60}h/semana, até {Math.floor(c.limiteDiarioMin / 60)}h{String(c.limiteDiarioMin % 60).padStart(2, '0')}/dia, {c.folgasSemana} folga(s), divisor {c.divisor}</td>
