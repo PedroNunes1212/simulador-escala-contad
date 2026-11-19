@@ -230,20 +230,22 @@ describe('pedidos de 19/11: domingos por sexo e divisor 210', () => {
   });
   const noDomingo = (e: Entrada) => simularCenario(e, CENARIOS[0]).pessoas.filter((p) => p.turnos.some((t) => t.dia === 6)).length;
 
-  it('limite de domingo: homem trabalha 3 de 4, mulher 2 de 4', () => {
-    expect(limiteDomingo(4, 0)).toBe(3);
+  it('limite de domingo: homem trabalha 2 de 3, mulher 1 de 2', () => {
+    expect(limiteDomingo(3, 0)).toBe(2);
+    expect(limiteDomingo(6, 0)).toBe(4);
+    expect(limiteDomingo(4, 0)).toBe(2);
     expect(limiteDomingo(0, 4)).toBe(2);
-    expect(limiteDomingo(1, 1)).toBe(1);
+    expect(limiteDomingo(2, 2)).toBe(2);
     expect(limiteDomingo(1, 0)).toBe(0);
   });
   it('a escala respeita o limite e avisa no domingo', () => {
-    expect(noDomingo(base(4, 0))).toBeLessThanOrEqual(3);
+    expect(noDomingo(base(6, 0))).toBeLessThanOrEqual(4);
     expect(noDomingo(base(0, 4))).toBeLessThanOrEqual(2);
     const r = simularCenario(base(0, 4), CENARIOS[0]);
     expect(r.alertas.some((a) => a.texto.includes('no máximo 2 de 4') && a.texto.includes('domingo'))).toBe(true);
   });
   it('mais mulheres = menos gente no domingo, sem mudar o total de pessoas', () => {
-    expect(noDomingo(base(0, 4))).toBeLessThan(noDomingo(base(4, 0)));
+    expect(noDomingo(base(0, 6))).toBeLessThan(noDomingo(base(6, 0)));
   });
   it('divisor do cenário 44h é 210 por padrão e 220 se escolhido', () => {
     expect(cenarioEfetivo(CENARIOS[0], base(1, 0)).divisor).toBe(210);

@@ -55,18 +55,21 @@ export const TETO_DIARIO_COM_EXTRA = 10 * 60;
 export const DIVISOR_44_PADRAO = 210;
 
 /**
- * Folgas obrigatórias no domingo num ciclo de 4 semanas (um mês): homem 1, mulher 2 (a cada 15 dias, CLT art. 386).
- * Pedido da ContaD em 19/11/2026. Pendente: no comércio a Lei 10.101/2000, art. 6º, exige 1 domingo a cada 3 semanas.
+ * Folga obrigatória no domingo: homem 1 a cada 3 semanas (Lei 10.101/2000, art. 6º, comércio);
+ * mulher 1 a cada 15 dias, ou seja, a cada 2 semanas (CLT art. 386). Confirmado pela ContaD em 19/11/2026.
  */
 export const REGRA_DOMINGO = {
-  cicloSemanas: 4, folgasHomem: 1, folgasMulher: 2, status: 'pendente' as const,
-  fonte: 'Pedido ContaD (19/11/2026); CLT art. 386 (mulher, a cada 15 dias); a conferir: Lei 10.101/2000, art. 6º (comércio)',
+  semanasHomem: 3, semanasMulher: 2, status: 'validada' as const,
+  fonte: 'Lei 10.101/2000, art. 6º (homem: 1 domingo a cada 3 semanas); CLT art. 386 (mulher: a cada 15 dias). Confirmado pela ContaD em 19/11/2026',
 };
 
-/** Máximo de pessoas que podem trabalhar em TODOS os domingos com rodízio, respeitando as folgas acima. */
+/**
+ * Máximo de pessoas que podem trabalhar em TODOS os domingos com rodízio.
+ * Homem trabalha 2 de cada 3 domingos e mulher 1 de cada 2: (4H + 3M) / 6, arredondado para baixo.
+ */
 export function limiteDomingo(homens: number, mulheres: number): number {
-  const { cicloSemanas: c, folgasHomem: fh, folgasMulher: fm } = REGRA_DOMINGO;
-  return Math.floor((homens * (c - fh) + mulheres * (c - fm)) / c);
+  const { semanasHomem: sh, semanasMulher: sm } = REGRA_DOMINGO;
+  return Math.floor(homens * (sh - 1) / sh + mulheres * (sm - 1) / sm + 1e-9);
 }
 
 export function cenarioEfetivo(c: Cenario, entrada: Entrada): Cenario {

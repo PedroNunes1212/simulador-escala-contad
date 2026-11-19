@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ENTRADA_VAZIA } from './dados/exemplos';
-import { CENARIOS, OBSERVACOES_EC, VERSAO_REGRAS, cenarioEfetivo } from './motor/regras';
+import { CENARIOS, OBSERVACOES_EC, REGRA_DOMINGO, VERSAO_REGRAS, cenarioEfetivo } from './motor/regras';
 import { simularTodos } from './motor/simular';
 import type { Entrada } from './motor/tipos';
 import { Formulario } from './ui/Formulario';
@@ -216,6 +216,7 @@ export default function App() {
                 </tbody>
               </table>
             </div>
+            <p className="mt-3 text-sm"><strong>Folga no domingo:</strong> homem 1 a cada {REGRA_DOMINGO.semanasHomem} semanas, mulher 1 a cada {REGRA_DOMINGO.semanasMulher} semanas. {REGRA_DOMINGO.fonte}. <span className="font-semibold text-ok">Validada</span></p>
             <h3 className="mt-4 font-semibold">Outros pontos da EC 141/2026 (a conferir)</h3>
             <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
               {OBSERVACOES_EC.map((o) => <li key={o}>{o}</li>)}
