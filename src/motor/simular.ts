@@ -74,8 +74,8 @@ export function simularCenario(entrada: Entrada, cenarioBase: Cenario, p: Parame
     cobertura.push(r.cobertura);
     const precisaDomingo = Math.max(0, ...(r.cobertura.necessarias[6] ?? []));
     if (entrada.funcionamento[6]?.aberto && precisaDomingo > r.limiteDomingo && r.total > 0) {
-      const { cicloSemanas, folgasHomem, folgasMulher } = REGRA_DOMINGO;
-      alertas.push({ tipo: 'aviso', texto: `${f.nome}: no máximo ${r.limiteDomingo} de ${r.total} pessoa(s) podem trabalhar em cada domingo, porque em cada ${cicloSemanas} semanas o homem folga ${folgasHomem} domingo e a mulher folga ${folgasMulher} (a cada 15 dias). O domingo precisa de ${precisaDomingo}.` });
+      const { semanasHomem, semanasMulher } = REGRA_DOMINGO;
+      alertas.push({ tipo: 'aviso', texto: `${f.nome}: no máximo ${r.limiteDomingo} de ${r.total} pessoa(s) podem trabalhar em cada domingo, porque o homem folga 1 domingo a cada ${semanasHomem} semanas e a mulher 1 a cada ${semanasMulher} (a cada 15 dias). O domingo precisa de ${precisaDomingo}.` });
     }
     if (f.salario > 0) folha += custoMensal(f.salario, entrada.regime, p).total * f.quantidade;
     for (const c of r.cobertura.periodosCriticos.slice(0, 6)) {
