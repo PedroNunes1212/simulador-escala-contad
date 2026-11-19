@@ -24,7 +24,7 @@ export function relatorioXml(entrada: Entrada, resultados: ResultadoCenario[], c
   l.push(`  <contato${attrs({ empresa: contato.empresa, responsavel: contato.responsavel, telefone: contato.telefone, email: contato.email })}>`);
   if (contato.duvida.trim()) l.push(`    <duvida>${esc(contato.duvida.trim())}</duvida>`);
   l.push('  </contato>');
-  l.push(`  <empresa${attrs({ regime: entrada.regime, acordoAcima8h: !!entrada.acordoAcima8h })}>`);
+  l.push(`  <empresa${attrs({ regime: entrada.regime, acordoAcima8h: !!entrada.acordoAcima8h, divisorHoraExtra44: entrada.divisor44 ?? 210 })}>`);
   l.push('    <funcionamento>');
   entrada.funcionamento.forEach((d, i) => {
     if (!d.aberto || !d.periodos.length) { l.push(`      <dia${attrs({ nome: DIAS[i], aberto: false })}/>`); return; }
@@ -36,7 +36,7 @@ export function relatorioXml(entrada: Entrada, resultados: ResultadoCenario[], c
   l.push('  </empresa>');
   l.push('  <equipe>');
   for (const f of entrada.funcoes) {
-    l.push(`    <funcao${attrs({ id: f.id, nome: f.nome, pessoas: f.quantidade, jornadaSemanal: duracao(f.jornadaContratualMin), salarioMedio: f.salario || undefined })}>`);
+    l.push(`    <funcao${attrs({ id: f.id, nome: f.nome, pessoas: f.quantidade, homens: f.quantidade - Math.min(f.mulheres ?? 0, f.quantidade), mulheres: Math.min(f.mulheres ?? 0, f.quantidade), jornadaSemanal: duracao(f.jornadaContratualMin), salarioMedio: f.salario || undefined })}>`);
     for (const d of entrada.demandas.filter((x) => x.funcaoId === f.id)) {
       l.push(`      <necessidade${attrs({ dias: d.dias.map((x) => DIAS[x]).join(','), inicio: hhmm(d.ini), fim: fim(d.fim), pessoas: d.pessoas })}/>`);
     }
