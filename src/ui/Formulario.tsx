@@ -189,7 +189,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
                       <Contador id={`qm-${f.id}`} rotulo={`mulheres em ${f.nome}`} valor={mulheresDe(f)} min={0} max={50 - (f.quantidade - mulheresDe(f))}
                         onChange={(n) => setFuncao(f.id, { quantidade: f.quantidade - mulheresDe(f) + n, mulheres: n })} />
                     </div>
-                    <p className="w-full text-sm text-marinho/70">Por mês, cada homem folga 1 domingo e cada mulher folga 2 (a cada 15 dias).</p>
+                    <p className="w-full text-sm text-marinho/70">Folga no domingo: homem 1 a cada 3 semanas; mulher 1 a cada 15 dias.</p>
                   </div>
                   <div>
                     <label className="rotulo" htmlFor={`s-${f.id}`}>Salário médio (R$)</label>
