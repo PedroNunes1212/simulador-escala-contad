@@ -60,7 +60,10 @@ export interface Entrada {
   funcionamento: DiaFuncionamento[]; // 7 posições
   funcoes: Funcao[];
   demandas: Demanda[];
-  /** Acordo ou convenção coletiva que permite mais de 8h por dia (ex.: 5 × 8h24 no cenário de 42h). */
+  /**
+   * Acordo ou convenção coletiva que permite mais de 8h por dia (ex.: 5 × 8h24 no cenário de 42h).
+   * Fora da tela desde 24/11/2026 (pedido da ContaD): o simulador usa sempre o limite de 8h por dia.
+   */
   acordoAcima8h?: boolean;
   /** Divisor da hora extra no cenário de 44h (padrão 210, pedido da ContaD; a CLT usa 220 para 44h). */
   divisor44?: 210 | 220;

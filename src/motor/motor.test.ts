@@ -124,7 +124,7 @@ describe('gerador', () => {
   it('sem acordo, 42h fica em 8h por dia e avisa (não limita em silêncio)', () => {
     const r = simularCenario(base, C42);
     expect(r.pessoas.every((p) => p.turnos.every((t) => t.trabalhoMin <= 480))).toBe(true);
-    expect(r.alertas.some((a) => /Sem acordo/.test(a.texto))).toBe(true);
+    expect(r.alertas.some((a) => /limite de 8h por dia/.test(a.texto))).toBe(true);
   });
   it('respeita 11h de descanso entre jornadas, inclusive domingo → segunda', () => {
     const longo: Entrada = {

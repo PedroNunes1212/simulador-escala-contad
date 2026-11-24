@@ -115,11 +115,6 @@ export function Formulario({ entrada, mudar, passo }: Props) {
           {REGIMES.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
         </select>
         <p className="mt-2 text-sm text-marinho/70">Define os encargos: no Simples (exceto anexo IV) não há INSS patronal, RAT nem terceiros.</p>
-        <p className="rotulo mt-4" id="acordo-rotulo">Há acordo ou convenção coletiva que permite mais de 8h por dia?</p>
-        <Segmentado rotulo="Acordo para mais de 8h por dia" valor={entrada.acordoAcima8h ? 'sim' : 'nao'}
-          opcoes={[{ valor: 'nao', nome: 'Não ou não sei' }, { valor: 'sim', nome: 'Sim' }]}
-          onChange={(v) => mudar({ ...entrada, acordoAcima8h: v === 'sim' })} />
-        <p className="mt-2 text-sm text-marinho/70">Com acordo, as 42h podem ser 5 dias de 8h24. Sem acordo, o limite é 8h por dia.</p>
         <p className="rotulo mt-4">Divisor da hora extra no cenário de 44h</p>
         <Segmentado rotulo="Divisor da hora extra no cenário de 44h" valor={entrada.divisor44 ?? 210}
           opcoes={[{ valor: 210, nome: '210 (padrão ContaD)' }, { valor: 220, nome: '220' }]}
