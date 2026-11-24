@@ -138,8 +138,6 @@ export function Relatorio({ entrada, resultados, onVoltar, podeBaixar }: {
           <section className="mt-5 break-inside-avoid">
             <h3 className="text-lg font-bold">2. Dados informados</h3>
             <p className="mt-1"><strong>Regime tributário:</strong> {REGIME[entrada.regime]}</p>
-            <p><strong>Acordo ou convenção para mais de 8h por dia:</strong> {entrada.acordoAcima8h ? 'sim' : 'não ou não sabe'}</p>
-            <p><strong>Divisor da hora extra (44h):</strong> {entrada.divisor44 ?? 210}</p>
             <p><strong>Funcionamento:</strong> {resumoFuncionamento(entrada.funcionamento)}</p>
             <div className="overflow-x-auto">
               <table className="mt-2 w-full text-sm">

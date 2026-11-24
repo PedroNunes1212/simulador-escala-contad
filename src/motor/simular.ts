@@ -100,7 +100,7 @@ export function simularCenario(entrada: Entrada, cenarioBase: Cenario, p: Parame
   }
   if (cenario.limiteDiarioMin < cenarioBase.limiteDiarioMin) {
     const max = cenario.limiteDiarioMin * (7 - cenario.folgasSemana);
-    alertas.push({ tipo: 'aviso', texto: `Sem acordo ou convenção que permita mais de ${duracao(LIMITE_DIARIO_SEM_ACORDO)} por dia, cada pessoa fica em até ${duracao(max)} por semana neste cenário, abaixo das ${duracao(cenarioBase.limiteSemanalMin)} permitidas. Se houver acordo, marque a opção em "Empresa".` });
+    alertas.push({ tipo: 'aviso', texto: `Com o limite de ${duracao(LIMITE_DIARIO_SEM_ACORDO)} por dia, cada pessoa fica em até ${duracao(max)} por semana neste cenário, abaixo das ${duracao(cenarioBase.limiteSemanalMin)} permitidas.` });
   }
   if (cenario.status === 'pendente') alertas.push({ tipo: 'info', texto: `Regras do cenário ${cenario.id}h ainda não validadas pela ContaD (${cenario.fonte}).` });
   const nec = cobertura.reduce((a, c) => a + c.necessarioMin, 0);

@@ -76,7 +76,7 @@ export function Resumo({ entrada, resultados }: { entrada: Entrada; resultados: 
         <h2 className="font-bold">Importante</h2>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-marinho/80">
           <li>O salário dos funcionários não pode ser reduzido com a nova jornada.</li>
-          {!entrada.acordoAcima8h && <li>Sem acordo ou convenção coletiva, cada dia tem no máximo 8h. Por isso as 42h ficam iguais às 40h.</li>}
+          {!entrada.acordoAcima8h && <li>Cada dia tem no máximo 8h de trabalho. Por isso as 42h ficam iguais às 40h.</li>}
           {semSalario && <li>Sem o salário de todas as funções, os custos ficam incompletos.</li>}
           <li>As regras ainda estão sendo conferidas pela ContaD. Antes de mudar a escala, fale com a gente.</li>
         </ul>
