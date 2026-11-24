@@ -18,3 +18,9 @@ describe('mensagem para o WhatsApp do DP', () => {
     expect(linkWhatsapp('oi', '')).toBe('https://wa.me/?text=oi');
   });
 });
+
+describe('número do DP', () => {
+  it('o link padrão vai para o WhatsApp do DP (31) 99810-9893', () => {
+    expect(linkWhatsapp('oi')).toBe('https://wa.me/5531998109893?text=oi');
+  });
+});
