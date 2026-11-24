@@ -40,7 +40,6 @@ export function sanitizar(e: unknown): Entrada | null {
   const ids = new Set(funcoes.map((f) => f.id));
   return {
     regime: regimes.includes(x.regime) ? x.regime : 'simples',
-    divisor44: x.divisor44 === 220 ? 220 : 210,
     funcionamento: x.funcionamento.map((d) => ({
       aberto: !!d?.aberto,
       periodos: (Array.isArray(d?.periodos) ? d.periodos : []).slice(0, 3)
@@ -55,7 +54,7 @@ export function sanitizar(e: unknown): Entrada | null {
 }
 
 const PASSOS = [
-  { n: 1, nome: 'Empresa', dica: 'Regime tributário e divisor da hora extra.' },
+  { n: 1, nome: 'Empresa', dica: 'Regime tributário da empresa.' },
   { n: 2, nome: 'Funcionamento', dica: 'Dias e horários em que a empresa abre.' },
   { n: 3, nome: 'Equipe', dica: 'Funções, quantidade de pessoas, jornada e salário.' },
   { n: 4, nome: 'Pessoas por horário', dica: 'Quantas pessoas precisam estar trabalhando ao mesmo tempo, em cada horário do dia?' },

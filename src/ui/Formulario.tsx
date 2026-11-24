@@ -115,11 +115,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
           {REGIMES.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
         </select>
         <p className="mt-2 text-sm text-marinho/70">Define os encargos: no Simples (exceto anexo IV) não há INSS patronal, RAT nem terceiros.</p>
-        <p className="rotulo mt-4">Divisor da hora extra no cenário de 44h</p>
-        <Segmentado rotulo="Divisor da hora extra no cenário de 44h" valor={entrada.divisor44 ?? 210}
-          opcoes={[{ valor: 210, nome: '210 (padrão ContaD)' }, { valor: 220, nome: '220' }]}
-          onChange={(v) => mudar({ ...entrada, divisor44: v as 210 | 220 })} />
-        <p className="mt-2 text-sm text-marinho/70">Valor da hora = salário ÷ divisor. Nos cenários de 42h e 40h o divisor é 210 e 200.</p>
+        <p className="mt-4 text-sm text-marinho/70">Hora extra: valor da hora = salário ÷ 210 nos cenários de 44h e 42h, e ÷ 200 no de 40h.</p>
       </Secao>
       )}
 

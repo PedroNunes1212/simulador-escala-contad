@@ -24,7 +24,7 @@ export function relatorioXml(entrada: Entrada, resultados: ResultadoCenario[], c
   l.push(`  <contato${attrs({ empresa: contato.empresa, responsavel: contato.responsavel, telefone: contato.telefone, email: contato.email })}>`);
   if (contato.duvida.trim()) l.push(`    <duvida>${esc(contato.duvida.trim())}</duvida>`);
   l.push('  </contato>');
-  l.push(`  <empresa${attrs({ regime: entrada.regime, divisorHoraExtra44: entrada.divisor44 ?? 210 })}>`);
+  l.push(`  <empresa${attrs({ regime: entrada.regime })}>`);
   l.push('    <funcionamento>');
   entrada.funcionamento.forEach((d, i) => {
     if (!d.aberto || !d.periodos.length) { l.push(`      <dia${attrs({ nome: DIAS[i], aberto: false })}/>`); return; }
