@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { linkWhatsapp, mensagemDp } from '../dados/mensagemDp';
+import { relatorioPdf } from '../dados/relatorioPdf';
 import { relatorioXml, type ContatoRelatorio } from '../dados/relatorioXml';
 import { OBSERVACOES_EC, VERSAO_REGRAS } from '../motor/regras';
 import { horasSemana } from '../motor/simular';
@@ -14,15 +15,23 @@ const REGIME: Record<string, string> = {
 };
 const fim = (m: number) => (m === 1440 ? '24:00' : hhmm(m));
 
-function baixar(nome: string, conteudo: string, tipo: string) {
+function baixar(nome: string, conteudo: string | Blob, tipo: string) {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+  a.href = URL.createObjectURL(conteudo instanceof Blob ? conteudo : new Blob([conteudo], { type: tipo }));
   a.download = nome;
   a.click();
-  URL.revokeObjectURL(a.href);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-/** Relatório da simulação para o Departamento Pessoal: resumo simples primeiro, detalhes depois. Vira PDF pela impressão. */
+/** Celulares com a janela de compartilhar do sistema que aceita arquivos (Android e iPhone). */
+function compartilhaArquivo(): boolean {
+  try {
+    return typeof navigator.canShare === 'function'
+      && navigator.canShare({ files: [new File(['x'], 'teste.pdf', { type: 'application/pdf' })] });
+  } catch { return false; }
+}
+
+/** Relatório da simulação para o Departamento Pessoal: resumo simples primeiro, detalhes depois. O PDF é gerado no navegador. */
 export function Relatorio({ entrada, resultados, onVoltar, podeBaixar }: {
   entrada: Entrada; resultados: ResultadoCenario[]; onVoltar: () => void; podeBaixar: boolean;
 }) {
@@ -38,6 +47,20 @@ export function Relatorio({ entrada, resultados, onVoltar, podeBaixar }: {
   const data = geradoEm.toLocaleDateString('pt-BR');
   const hora = geradoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const nomeArquivo = `relatorio-escala-${geradoEm.toISOString().slice(0, 10)}`;
+  const [podeCompartilhar] = useState(() => podeBaixar && compartilhaArquivo());
+  const [aviso, setAviso] = useState('');
+  const pdf = () => relatorioPdf(entrada, resultados, contato, geradoEm);
+  const baixarPdf = () => baixar(`${nomeArquivo}.pdf`, pdf(), 'application/pdf');
+  const compartilharPdf = async () => {
+    setAviso('');
+    const arquivo = new File([pdf()], `${nomeArquivo}.pdf`, { type: 'application/pdf' });
+    try {
+      await navigator.share({ files: [arquivo], title: 'Relatório da simulação de escala', text: mensagemDp(entrada, resultados, contato) });
+    } catch (e) {
+      if ((e as Error)?.name !== 'AbortError') setAviso('Não deu para abrir o compartilhamento. Baixe o PDF e anexe na conversa do WhatsApp.');
+    }
+  };
+  const linkDp = linkWhatsapp(mensagemDp(entrada, resultados, contato));
 
   return (
     <div className="min-h-dvh bg-fundo print:bg-white">
@@ -48,7 +71,7 @@ export function Relatorio({ entrada, resultados, onVoltar, podeBaixar }: {
             <div className="flex flex-wrap gap-2">
               <button type="button" className="botao border border-white/40 text-sm text-white hover:bg-white/10"
                 onClick={() => baixar(`${nomeArquivo}.xml`, relatorioXml(entrada, resultados, contato, geradoEm), 'application/xml')}>Baixar XML</button>
-              <button type="button" className="botao bg-white text-sm text-marinho hover:bg-white/90" onClick={() => window.print()}>Salvar em PDF</button>
+              <button type="button" className="botao bg-white text-sm text-marinho hover:bg-white/90" onClick={baixarPdf}>Baixar PDF</button>
             </div>
           )}
         </div>
@@ -71,24 +94,41 @@ export function Relatorio({ entrada, resultados, onVoltar, podeBaixar }: {
               <textarea id="r-duvida" rows={3} className="campo" placeholder="Ex.: posso manter a loja aberta no sábado à tarde com a equipe atual?" {...campo('duvida')} />
             </div>
           </div>
-          <ol className="mt-4 space-y-3">
-            <li className="flex flex-wrap items-center gap-3">
-              <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marinho text-sm font-bold text-white">1</span>
-              {podeBaixar
-                ? <button type="button" className="botao-sec" onClick={() => window.print()}>Salvar o relatório em PDF</button>
-                : <span className="text-sm text-marinho/70">Salve o relatório em PDF (na versão publicada; nesta prévia o navegador bloqueia).</span>}
-            </li>
-            <li className="flex flex-wrap items-center gap-3">
-              <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marinho text-sm font-bold text-white">2</span>
-              <a className="botao-principal" target="_blank" rel="noopener noreferrer" href={linkWhatsapp(mensagemDp(entrada, resultados, contato))}>
-                Enviar pelo WhatsApp do DP
-              </a>
-            </li>
-          </ol>
-          <p className="mt-3 text-sm text-marinho/70">
-            O WhatsApp abre numa nova aba com um resumo já escrito. Anexe o PDF na conversa.
-            Nada é enviado sem você tocar em enviar.
-          </p>
+          {podeCompartilhar ? (
+            <>
+              <button type="button" className="botao-principal mt-4 w-full sm:w-auto" onClick={compartilharPdf}>Compartilhar PDF no WhatsApp</button>
+              <p className="mt-3 text-sm text-marinho/70">
+                Abre a janela de compartilhar do celular com o PDF pronto. Toque em WhatsApp e escolha o contato do DP da ContaD,
+                (31) 99810-9893. Nada é enviado sem você tocar em enviar.
+              </p>
+              <p className="mt-2 text-sm">
+                <a className="font-semibold underline" target="_blank" rel="noopener noreferrer" href={linkDp}>Abrir a conversa do DP no WhatsApp</a>
+                {' '}ou <button type="button" className="font-semibold underline" onClick={baixarPdf}>baixar o PDF</button>.
+              </p>
+            </>
+          ) : (
+            <>
+              <ol className="mt-4 space-y-3">
+                <li className="flex flex-wrap items-center gap-3">
+                  <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marinho text-sm font-bold text-white">1</span>
+                  {podeBaixar
+                    ? <button type="button" className="botao-sec" onClick={baixarPdf}>Baixar o relatório em PDF</button>
+                    : <span className="text-sm text-marinho/70">Baixe o relatório em PDF (na versão publicada; nesta prévia o navegador bloqueia).</span>}
+                </li>
+                <li className="flex flex-wrap items-center gap-3">
+                  <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marinho text-sm font-bold text-white">2</span>
+                  <a className="botao-principal" target="_blank" rel="noopener noreferrer" href={linkDp}>
+                    Enviar pelo WhatsApp do DP
+                  </a>
+                </li>
+              </ol>
+              <p className="mt-3 text-sm text-marinho/70">
+                O WhatsApp abre numa nova aba com um resumo já escrito. Anexe o PDF baixado na conversa.
+                Nada é enviado sem você tocar em enviar.
+              </p>
+            </>
+          )}
+          {aviso && <p role="alert" className="mt-2 text-sm font-semibold text-falta">{aviso}</p>}
         </section>
 
         <article className="painel p-4 text-[15px] sm:p-6 print:border-0 print:p-0 print:text-[11pt]">

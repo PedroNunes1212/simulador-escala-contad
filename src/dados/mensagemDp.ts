@@ -5,9 +5,9 @@ import type { ContatoRelatorio } from './relatorioXml';
 
 /**
  * WhatsApp do Departamento Pessoal da ContaD, só dígitos com DDI e DDD (ex.: '5531999999999').
- * Vazio: o WhatsApp abre a lista de conversas e o cliente escolhe o contato.
+ * Departamento Pessoal: (31) 99810-9893. Vazio: o WhatsApp abre a lista de conversas.
  */
-export const WHATSAPP_DP = '';
+export const WHATSAPP_DP = '5531998109893';
 
 /** Mensagem curta, já preenchida, com o essencial da simulação. */
 export function mensagemDp(entrada: Entrada, resultados: ResultadoCenario[], contato: ContatoRelatorio): string {
