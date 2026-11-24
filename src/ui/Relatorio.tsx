@@ -96,14 +96,14 @@ export function Relatorio({ entrada, resultados, onVoltar, podeBaixar }: {
           </div>
           {podeCompartilhar ? (
             <>
-              <button type="button" className="botao-principal mt-4 w-full sm:w-auto" onClick={compartilharPdf}>Compartilhar PDF no WhatsApp</button>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <button type="button" className="botao-principal w-full sm:w-auto" onClick={compartilharPdf}>Compartilhar PDF no WhatsApp</button>
+                <a className="botao-sec w-full border-2 border-marinho text-center sm:w-auto" target="_blank" rel="noopener noreferrer" href={linkDp}>Abrir uma conversa com o DP</a>
+              </div>
               <p className="mt-3 text-sm text-marinho/70">
-                Abre a janela de compartilhar do celular com o PDF pronto. Toque em WhatsApp e escolha o contato do DP da ContaD,
-                (31) 99810-9893. Nada é enviado sem você tocar em enviar.
-              </p>
-              <p className="mt-2 text-sm">
-                <a className="font-semibold underline" target="_blank" rel="noopener noreferrer" href={linkDp}>Abrir a conversa do DP no WhatsApp</a>
-                {' '}ou <button type="button" className="font-semibold underline" onClick={baixarPdf}>baixar o PDF</button>.
+                Compartilhar abre a janela do celular com o PDF pronto: toque em WhatsApp e escolha o contato do DP da ContaD,
+                (31) 99810-9893. Para só conversar, use "Abrir uma conversa com o DP". Nada é enviado sem você tocar em enviar.
+                {' '}<button type="button" className="font-semibold underline" onClick={baixarPdf}>Baixar o PDF</button>
               </p>
             </>
           ) : (
