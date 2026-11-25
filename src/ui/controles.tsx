@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { hhmm } from '../motor/tempo';
 
 /** Horários de 15 em 15 minutos, sempre em 24h. */
@@ -38,11 +38,15 @@ export function CampoHora({ valor, onChange, rotulo, min = 0, max = 1440 }: {
   const confirmado = useRef(false);
 
   useEffect(() => { if (!aberto) setTexto(rotuloHora(valor)); }, [valor, aberto]);
+  useEffect(() => { setErro(false); }, [valor]);
 
   const todas = HORAS.filter((m) => m >= min && m <= max);
   const digitos = texto.replace(/\D/g, '');
   const filtradas = digitou && digitos
-    ? todas.filter((m) => { const r = rotuloHora(m).replace(':', ''); return r.startsWith(digitos) || r.startsWith(digitos.padStart(2, '0')); })
+    ? todas.filter((m) => {
+      const r = rotuloHora(m).replace(':', '');
+      return r.startsWith(digitos) || r.startsWith(digitos.padStart(2, '0')) || r.replace(/^0/, '').startsWith(digitos);
+    })
     : todas;
   const opcoes = filtradas.length ? filtradas : todas;
 
@@ -80,15 +84,23 @@ export function CampoHora({ valor, onChange, rotulo, min = 0, max = 1440 }: {
           onChange={(e) => { setTexto(e.target.value); setDigitou(true); setSeta(false); setAberto(true); setAtivo(0); }}
           onBlur={() => { if (aberto && !confirmado.current) confirmar(digitou ? lerHora(texto) : valor); }}
           onKeyDown={(e) => {
-            if (e.key === 'ArrowDown') { e.preventDefault(); if (!aberto) abrir(); else { setSeta(true); setAtivo((a) => Math.min(opcoes.length - 1, a + 1)); } }
-            else if (e.key === 'ArrowUp') { e.preventDefault(); setSeta(true); setAtivo((a) => Math.max(0, a - 1)); }
-            else if (e.key === 'Enter') { e.preventDefault(); confirmar(digitou && !seta && lerHora(texto) !== null ? lerHora(texto) : opcoes[ativo] ?? null); campo.current?.blur(); }
-            else if (e.key === 'Escape') { setAberto(false); setDigitou(false); setTexto(rotuloHora(valor)); }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              e.preventDefault();
+              if (!aberto) abrir();
+              else { setSeta(true); setAtivo((a) => (e.key === 'ArrowDown' ? Math.min(opcoes.length - 1, a + 1) : Math.max(0, a - 1))); }
+            }
+            else if (e.key === 'Enter') {
+              e.preventDefault();
+              // Só vale o item da lista se a pessoa andou nela com as setas; senão vale o que digitou (inválido volta e fica vermelho).
+              confirmar(aberto && seta ? opcoes[ativo] ?? null : digitou ? lerHora(texto) : valor);
+              campo.current?.blur();
+            }
+            else if (e.key === 'Escape') { setAberto(false); setDigitou(false); setSeta(false); setTexto(rotuloHora(valor)); }
             else if (e.key === 'Tab' && aberto) confirmar(digitou && !seta ? lerHora(texto) : seta ? opcoes[ativo] ?? null : valor);
           }} />
       </div>
       {aberto && (
-        <ul ref={lista} id={`${id}-lista`} role="listbox" aria-label={rotulo}
+        <ul ref={lista} id={`${id}-lista`} role="listbox" aria-label={rotulo} onMouseDown={(e) => e.preventDefault()}
           className="absolute left-0 top-full z-40 mt-1.5 max-h-60 w-full min-w-[7.5rem] overflow-y-auto overscroll-contain rounded-xl bg-white p-1 shadow-[0_0_0_1px_rgba(4,20,53,0.08),0_16px_40px_-12px_rgba(4,20,53,0.35)]">
           {opcoes.map((m, i) => (
             <li key={m} id={`${id}-${m}`} role="option" aria-selected={m === valor}
@@ -105,16 +117,26 @@ export function CampoHora({ valor, onChange, rotulo, min = 0, max = 1440 }: {
 }
 
 /** Opções em cartões grandes (pergunta com poucas escolhas, cada uma com explicação). */
-export function OpcoesCartao<T extends string>({ opcoes, valor, onChange, rotulo, colunas = 1 }: {
-  opcoes: { valor: T; nome: string; descricao?: string }[]; valor: T; onChange: (v: T) => void; rotulo: string; colunas?: 1 | 2 | 3;
+export function OpcoesCartao<T extends string>({ opcoes, valor, onChange, rotulo, rotuloId, colunas = 1 }: {
+  opcoes: { valor: T; nome: string; descricao?: string }[]; valor: T; onChange: (v: T) => void; rotulo: string; rotuloId?: string; colunas?: 1 | 2 | 3;
 }) {
+  const grupo = useRef<HTMLDivElement>(null);
+  const atual = Math.max(0, opcoes.findIndex((o) => o.valor === valor));
+  const mover = (e: KeyboardEvent<HTMLDivElement>) => {
+    const passo = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+    if (!passo) return;
+    e.preventDefault();
+    const i = (atual + passo + opcoes.length) % opcoes.length;
+    onChange(opcoes[i].valor);
+    (grupo.current?.children[i] as HTMLElement | undefined)?.focus();
+  };
   const grid = colunas === 3 ? 'sm:grid-cols-3' : colunas === 2 ? 'sm:grid-cols-2' : '';
   return (
-    <div role="radiogroup" aria-label={rotulo} className={`grid gap-3 ${grid}`}>
-      {opcoes.map((o) => {
+    <div ref={grupo} role="radiogroup" aria-label={rotuloId ? undefined : rotulo} aria-labelledby={rotuloId} onKeyDown={mover} className={`grid gap-3 ${grid}`}>
+      {opcoes.map((o, i) => {
         const sel = o.valor === valor;
         return (
-          <button key={o.valor} type="button" role="radio" aria-checked={sel} onClick={() => onChange(o.valor)}
+          <button key={o.valor} type="button" role="radio" aria-checked={sel} tabIndex={i === atual ? 0 : -1} onClick={() => onChange(o.valor)}
             className={`group flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-150 ease-out active:scale-[0.99] ${
               sel ? 'border-marinho bg-[#f3f6fb] shadow-[0_8px_20px_-12px_rgba(4,20,53,0.45)]' : 'border-[#dde3ed] bg-white hover:border-marinho/35 hover:bg-[#fafbfd]'}`}>
             <span aria-hidden className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${sel ? 'border-marinho bg-marinho' : 'border-[#b8c2d4] bg-white group-hover:border-marinho/50'}`}>

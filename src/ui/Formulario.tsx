@@ -111,7 +111,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
       {ver(1) && (
       <Secao passo={passo ? 0 : 1} titulo={passo ? '' : 'Empresa'}>
         <p className="rotulo" id="regime-rotulo">Qual é o regime tributário da empresa?</p>
-        <OpcoesCartao rotulo="Regime tributário" valor={entrada.regime} opcoes={REGIMES} onChange={(v) => mudar({ ...entrada, regime: v })} />
+        <OpcoesCartao rotulo="Regime tributário" rotuloId="regime-rotulo" valor={entrada.regime} opcoes={REGIMES} onChange={(v) => mudar({ ...entrada, regime: v })} />
         <p className="mt-4 text-sm text-marinho/70">O regime define os encargos sobre a folha. Hora extra: valor da hora = salário ÷ 210 nos cenários de 44h e 42h, e ÷ 200 no de 40h.</p>
       </Secao>
       )}
@@ -129,9 +129,9 @@ export function Formulario({ entrada, mudar, passo }: Props) {
               <span className="inline-flex h-9 w-11 items-center justify-center rounded-lg bg-[#eef2f8] text-sm font-bold">{DIAS[i]}</span>
               {d.periodos.map((p, k) => (
                 <span key={k} className="flex items-center gap-1">
-                  <CampoHora rotulo={`${DIAS[i]} abre`} valor={p.ini} max={1425} onChange={(m) => setDia(i, { ...d, periodos: d.periodos.map((x, j) => (j === k ? { ...x, ini: m } : x)) })} />
+                  <CampoHora rotulo={`${DIAS[i]} abre`} valor={p.ini} max={p.fim - 15} onChange={(m) => setDia(i, { ...d, periodos: d.periodos.map((x, j) => (j === k ? { ...x, ini: m } : x)) })} />
                   <span aria-hidden className="px-0.5 text-marinho/50">até</span>
-                  <CampoHora rotulo={`${DIAS[i]} fecha`} valor={p.fim} min={15} onChange={(m) => setDia(i, { ...d, periodos: d.periodos.map((x, j) => (j === k ? { ...x, fim: m } : x)) })} />
+                  <CampoHora rotulo={`${DIAS[i]} fecha`} valor={p.fim} min={p.ini + 15} onChange={(m) => setDia(i, { ...d, periodos: d.periodos.map((x, j) => (j === k ? { ...x, fim: m } : x)) })} />
                 </span>
               ))}
               {abertos.length > 1 && (
@@ -253,9 +253,9 @@ export function Formulario({ entrada, mudar, passo }: Props) {
                       </div>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                         <span className="text-sm font-semibold">Das</span>
-                        <CampoHora rotulo={`Início da faixa de ${nome}`} valor={d.ini} max={1425} onChange={(m) => setDemanda(i, { ini: m })} />
+                        <CampoHora rotulo={`Início da faixa de ${nome}`} valor={d.ini} max={d.fim - 15} onChange={(m) => setDemanda(i, { ini: m })} />
                         <span className="text-sm font-semibold">às</span>
-                        <CampoHora rotulo={`Fim da faixa de ${nome}`} valor={d.fim} min={15} onChange={(m) => setDemanda(i, { fim: m })} />
+                        <CampoHora rotulo={`Fim da faixa de ${nome}`} valor={d.fim} min={d.ini + 15} onChange={(m) => setDemanda(i, { fim: m })} />
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span className="text-sm font-semibold">precisa de</span>
