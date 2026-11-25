@@ -7,7 +7,7 @@ import { Formulario } from './ui/Formulario';
 import { Resultado } from './ui/Resultado';
 import { Relatorio } from './ui/Relatorio';
 import { Resumo } from './ui/Resumo';
-import { Segmentado } from './ui/controles';
+import { OpcoesCartao } from './ui/controles';
 
 const CHAVE = 'simulador-escalas:entrada';
 // Na prévia publicada (artifact) o navegador bloqueia download e impressão.
@@ -185,11 +185,20 @@ export default function App() {
           {etapa < 5 && <Formulario entrada={entrada} mudar={mudar} passo={etapa} />}
           {etapa === 5 && (
             <>
-              <div className="nao-imprimir mb-4 flex flex-wrap items-center gap-3">
-                <span className="text-sm font-semibold">Como quer ver?</span>
-                <Segmentado rotulo="Tipo de resultado" valor={visao} onChange={setVisao}
-                  opcoes={[{ valor: 'resumo', nome: 'Resumo simples' }, { valor: 'completo', nome: 'Completo, com escala e mapa' }]} />
-              </div>
+              <section className="nao-imprimir painel mb-5 p-4 sm:p-5" aria-labelledby="como-ver">
+                <h2 id="como-ver" className="flex items-center gap-2 text-lg font-bold">
+                  <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[#eef2f8] text-base font-extrabold text-marinho">?</span>
+                  Como você quer ver o resultado?
+                </h2>
+                <p className="mt-1 text-sm text-marinho/70">Escolha uma das opções abaixo. Você pode trocar quando quiser.</p>
+                <div className="mt-4">
+                  <OpcoesCartao rotulo="Como você quer ver o resultado?" valor={visao} onChange={setVisao} colunas={2}
+                    opcoes={[
+                      { valor: 'resumo', nome: 'Resumo simples', descricao: 'O essencial: se a equipe dá conta em cada cenário e quanto custa resolver.' },
+                      { valor: 'completo', nome: 'Completo', descricao: 'A escala de cada pessoa, o mapa de cobertura hora a hora e os custos.' },
+                    ]} />
+                </div>
+              </section>
               {visao === 'resumo' ? <Resumo entrada={entrada} resultados={resultados} /> : <Resultado entrada={entrada} resultados={resultados} />}
             </>
           )}

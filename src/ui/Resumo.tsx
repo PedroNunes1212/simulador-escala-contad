@@ -54,7 +54,7 @@ export function Resumo({ entrada, resultados }: { entrada: Entrada; resultados: 
             )}
 
             {sol && (
-              <div className="mt-4 rounded-md bg-fundo p-3">
+              <div className="mt-4 rounded-xl bg-fundo p-3">
                 <h3 className="font-bold">Um jeito de resolver</h3>
                 <ul className="mt-1 space-y-1">
                   {sol.passos.map((p) => (
