@@ -1,15 +1,15 @@
 import { DIAS, type Demanda, type DiaFuncionamento, type Entrada, type Funcao, type Regime } from '../motor/tipos';
 import { resumoFuncionamento } from './analise';
-import { BotaoAdicionar, BotaoRemover, CampoHora, Contador, Segmentado } from './controles';
+import { BotaoAdicionar, BotaoRemover, CampoHora, Contador, OpcoesCartao, Segmentado } from './controles';
 
 const mulheresDe = (f: Funcao) => Math.min(f.mulheres ?? 0, f.quantidade);
 
 interface Props { entrada: Entrada; mudar: (e: Entrada) => void; passo?: number }
 
-const REGIMES: { id: Regime; nome: string }[] = [
-  { id: 'simples', nome: 'Simples Nacional (anexos I, II, III ou V)' },
-  { id: 'simples_anexo_iv', nome: 'Simples Nacional, anexo IV' },
-  { id: 'presumido_real', nome: 'Lucro Presumido ou Lucro Real' },
+const REGIMES: { valor: Regime; nome: string; descricao: string }[] = [
+  { valor: 'simples', nome: 'Simples Nacional', descricao: 'Anexos I, II, III ou V. Não paga INSS patronal, RAT nem terceiros sobre a folha.' },
+  { valor: 'simples_anexo_iv', nome: 'Simples Nacional, anexo IV', descricao: 'Ex.: construção, limpeza, vigilância. Paga INSS patronal e RAT, sem terceiros.' },
+  { valor: 'presumido_real', nome: 'Lucro Presumido ou Lucro Real', descricao: 'Paga INSS patronal, RAT e terceiros sobre a folha.' },
 ];
 
 const ATALHOS: { valor: string; nome: string; dias: number[] }[] = [
@@ -41,7 +41,7 @@ function Secao({ titulo, children, descricao, passo }: { titulo: string; descric
     <section className="painel p-4 sm:p-5">
       {titulo && (
         <h2 className="flex items-center gap-2 text-lg font-bold">
-          <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-marinho text-sm text-white">{passo}</span>
+          <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-marinho text-sm text-white">{passo}</span>
           {titulo}
         </h2>
       )}
@@ -110,12 +110,9 @@ export function Formulario({ entrada, mudar, passo }: Props) {
     <div className="space-y-4">
       {ver(1) && (
       <Secao passo={passo ? 0 : 1} titulo={passo ? '' : 'Empresa'}>
-        <label className="rotulo" htmlFor="regime">Regime tributário</label>
-        <select id="regime" className="campo" value={entrada.regime} onChange={(e) => mudar({ ...entrada, regime: e.target.value as Regime })}>
-          {REGIMES.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
-        </select>
-        <p className="mt-2 text-sm text-marinho/70">Define os encargos: no Simples (exceto anexo IV) não há INSS patronal, RAT nem terceiros.</p>
-        <p className="mt-4 text-sm text-marinho/70">Hora extra: valor da hora = salário ÷ 210 nos cenários de 44h e 42h, e ÷ 200 no de 40h.</p>
+        <p className="rotulo" id="regime-rotulo">Qual é o regime tributário da empresa?</p>
+        <OpcoesCartao rotulo="Regime tributário" valor={entrada.regime} opcoes={REGIMES} onChange={(v) => mudar({ ...entrada, regime: v })} />
+        <p className="mt-4 text-sm text-marinho/70">O regime define os encargos sobre a folha. Hora extra: valor da hora = salário ÷ 210 nos cenários de 44h e 42h, e ÷ 200 no de 40h.</p>
       </Secao>
       )}
 
@@ -125,21 +122,21 @@ export function Formulario({ entrada, mudar, passo }: Props) {
           onChange={(v) => setAbertos(ATALHOS.find((a) => a.valor === v)!.dias)} />
         <p className="rotulo mt-4">Dias abertos</p>
         <SeletorDias rotulo="Dias em que a empresa abre" dias={abertos} onChange={setAbertos} />
-        {abertos.length > 1 && <p className="mt-4 text-sm text-marinho/70">Use o ícone de copiar para repetir um horário em todos os dias.</p>}
-        <ul className="mt-2 divide-y divide-linha">
+        <p className="mt-4 text-sm text-marinho/70">Digite o horário (ex.: 8, 830 ou 18:30) ou escolha na lista.{abertos.length > 1 && ' Use o ícone de copiar para repetir um horário em todos os dias.'}</p>
+        <ul className="mt-2 divide-y divide-[#eef1f6]">
           {entrada.funcionamento.map((d, i) => !d.aberto ? null : (
-            <li key={i} className="flex flex-wrap items-center gap-2 py-2">
-              <span className="w-9 font-semibold">{DIAS[i]}</span>
+            <li key={i} className="flex flex-wrap items-center gap-2 py-2.5">
+              <span className="inline-flex h-9 w-11 items-center justify-center rounded-lg bg-[#eef2f8] text-sm font-bold">{DIAS[i]}</span>
               {d.periodos.map((p, k) => (
                 <span key={k} className="flex items-center gap-1">
                   <CampoHora rotulo={`${DIAS[i]} abre`} valor={p.ini} max={1425} onChange={(m) => setDia(i, { ...d, periodos: d.periodos.map((x, j) => (j === k ? { ...x, ini: m } : x)) })} />
-                  <span aria-hidden className="text-marinho/60">às</span>
+                  <span aria-hidden className="px-0.5 text-marinho/50">até</span>
                   <CampoHora rotulo={`${DIAS[i]} fecha`} valor={p.fim} min={15} onChange={(m) => setDia(i, { ...d, periodos: d.periodos.map((x, j) => (j === k ? { ...x, fim: m } : x)) })} />
                 </span>
               ))}
               {abertos.length > 1 && (
                 <button type="button" aria-label={`Usar o horário de ${DIAS[i]} em todos os dias abertos`} title="Usar este horário em todos os dias"
-                  className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-marinho-500 hover:bg-fundo"
+                  className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-xl text-marinho-500 transition-colors hover:bg-[#eef2f8]"
                   onClick={() => copiarParaTodos(i)}>
                   <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" />
@@ -159,7 +156,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
           {entrada.funcoes.map((f) => {
             const h = f.jornadaContratualMin / 60;
             return (
-              <fieldset key={f.id} className="rounded-md border border-linha bg-fundo/60 p-3">
+              <fieldset key={f.id} className="rounded-xl border border-linha bg-fundo/60 p-3">
                 <legend className="sr-only">{f.nome}</legend>
                 <div className="flex items-end gap-2">
                   <div className="min-w-0 flex-1">
@@ -208,7 +205,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
       {ver(4) && (
       <Secao passo={passo ? 0 : 4} titulo={passo ? '' : 'Pessoas necessárias por horário'}
         descricao="Não é quantas pessoas você tem (isso foi no passo 3). É de quantas você precisa trabalhando ao mesmo tempo, em cada horário, para a empresa funcionar bem. Com isso o simulador mostra onde vai faltar gente.">
-        <div className="mb-4 rounded-md border border-linha bg-white p-3 text-sm sm:p-4">
+        <div className="mb-4 rounded-xl border border-linha bg-white p-3 text-sm sm:p-4">
           <p className="font-bold">Exemplo: loja com 4 vendedores, aberta das 9h às 19h</p>
           <ul className="mt-2 space-y-1.5">
             <li className="flex gap-3"><span className="w-[7.5rem] shrink-0 font-semibold tabular-nums">Das 9h às 11h</span><span><strong>1 vendedor</strong> · movimento fraco</span></li>
@@ -217,7 +214,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
           </ul>
           <p className="mt-2 text-marinho/70">Cada horário vale para os dias que você marcar. Quem está no intervalo de almoço não conta.</p>
         </div>
-        <p className="mb-4 rounded-md bg-fundo px-3 py-2 text-sm">
+        <p className="mb-4 rounded-xl bg-fundo px-3 py-2 text-sm">
           <strong>Empresa aberta:</strong> {resumoFuncionamento(entrada.funcionamento)}
         </p>
         <div className="space-y-5">
@@ -225,7 +222,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
             const faixas = entrada.demandas.map((d, i) => ({ d, i })).filter(({ d }) => d.funcaoId === f.id);
             const nome = f.nome.trim() || 'Função sem nome';
             return (
-              <div key={f.id} className="rounded-lg border border-linha p-2.5 sm:p-4">
+              <div key={f.id} className="rounded-xl border border-linha p-2.5 sm:p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <h3 className="text-lg font-bold">{nome}</h3>
                   <span className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${f.quantidade ? 'bg-marinho/10 text-marinho' : 'bg-falta/10 text-falta'}`}>
@@ -239,7 +236,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
                 </p>
 
                 {faixas.length === 0 && (
-                  <div className="mt-3 rounded-md border border-dashed border-linha bg-fundo/60 p-3 text-sm">
+                  <div className="mt-3 rounded-xl border border-dashed border-linha bg-fundo/60 p-3 text-sm">
                     <p>Nenhum horário definido ainda. Sem faixas, o simulador considera <strong>1 pessoa</strong> durante todo o horário aberto.</p>
                   </div>
                 )}
@@ -249,7 +246,7 @@ export function Formulario({ entrada, mudar, passo }: Props) {
                 )}
                 <ul className="mt-3 space-y-2">
                   {faixas.map(({ d, i }, n) => (
-                    <li key={i} className="rounded-md border border-linha bg-fundo/60 p-2.5 sm:p-3">
+                    <li key={i} className="rounded-xl border border-linha bg-fundo/60 p-2.5 sm:p-3">
                       <div className="-mt-1 mb-1 flex items-center justify-between">
                         <span className="text-sm font-bold text-marinho/70">Horário {n + 1}</span>
                         <BotaoRemover rotulo={`Remover horário ${n + 1}`} onClick={() => mudar({ ...entrada, demandas: entrada.demandas.filter((_, j) => j !== i) })} />

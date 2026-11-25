@@ -3,28 +3,38 @@
 @tailwind utilities;
 
 html { -webkit-text-size-adjust: 100%; color-scheme: light; }
-body { @apply bg-fundo text-marinho font-sans antialiased; font-feature-settings: 'tnum' 1; }
+body {
+  @apply text-marinho font-sans antialiased;
+  font-feature-settings: 'tnum' 1;
+  /* Fundo: cinza-azulado claro com um véu do marinho no topo, para os cartões brancos se destacarem. */
+  background-color: #f1f4f9;
+  background-image:
+    radial-gradient(1200px 420px at 50% -120px, rgba(42, 74, 134, 0.14), transparent 70%),
+    linear-gradient(180deg, #eef2f8 0, #f4f6fa 480px);
+  background-attachment: fixed;
+}
 :focus-visible { outline: 2px solid #2a4a86; outline-offset: 2px; }
+[tabindex="-1"]:focus { outline: none; }
 input, select, button { font: inherit; }
 @layer components {
-.campo { @apply w-full rounded-md border border-linha bg-white px-3 py-2 text-[15px] text-marinho; min-height: 44px; }
-.rotulo { @apply block text-sm font-medium text-marinho/80 mb-1; }
-.botao { @apply inline-flex items-center justify-center rounded-md px-4 font-semibold transition-colors; min-height: 44px; }
-.botao-principal { @apply botao bg-marinho text-white hover:bg-marinho-700 active:bg-marinho disabled:cursor-not-allowed disabled:bg-marinho/30; }
-.botao-sec { @apply botao border border-linha bg-white text-marinho hover:bg-fundo; }
-.painel { @apply rounded-lg border border-linha bg-white; }
-.chip { @apply inline-flex items-center justify-center rounded-md px-2.5 sm:px-3 text-sm font-semibold text-marinho/75 transition-colors hover:bg-white hover:text-marinho; min-height: 44px; }
-.chip-ativo { @apply bg-marinho text-white shadow-sm hover:bg-marinho hover:text-white; }
-.contador-btn { @apply w-11 text-lg font-semibold text-marinho hover:bg-fundo disabled:text-marinho/25 disabled:hover:bg-white; min-height: 44px; }
-.dia { @apply inline-flex min-h-[44px] min-w-[36px] px-1 items-center justify-center rounded-md border text-sm font-semibold transition-colors; }
+.campo { @apply w-full rounded-xl border border-[#d3dae6] bg-white px-3.5 py-2 text-[15px] text-marinho shadow-[0_1px_0_rgba(4,20,53,0.03)] transition-[border-color,box-shadow] duration-150 placeholder:text-marinho/45 hover:border-[#b8c2d4] focus:border-marinho-500 focus:shadow-[0_0_0_3px_rgba(42,74,134,0.15)] focus:outline-none; min-height: 46px; }
+.rotulo { @apply block text-sm font-semibold text-marinho/80 mb-1.5; }
+.botao { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 font-semibold transition-[background-color,border-color,box-shadow,transform,color] duration-150 ease-out active:scale-[0.98]; min-height: 46px; }
+.botao-principal { @apply botao bg-marinho text-white shadow-[0_1px_2px_rgba(4,20,53,0.25),0_6px_16px_-6px_rgba(4,20,53,0.45)] hover:bg-marinho-700 hover:shadow-[0_2px_4px_rgba(4,20,53,0.25),0_10px_22px_-8px_rgba(4,20,53,0.5)] disabled:cursor-not-allowed disabled:bg-marinho/30 disabled:shadow-none; }
+.botao-sec { @apply botao border border-[#cfd7e4] bg-white text-marinho shadow-[0_1px_2px_rgba(4,20,53,0.06)] hover:border-marinho/40 hover:bg-[#f7f9fc]; }
+.painel { @apply rounded-2xl bg-white shadow-[0_0_0_1px_rgba(4,20,53,0.06),0_2px_4px_rgba(4,20,53,0.04),0_12px_32px_-16px_rgba(4,20,53,0.22)]; }
+.chip { @apply inline-flex items-center justify-center rounded-[10px] px-3 sm:px-3.5 text-sm font-semibold text-marinho/70 transition-[background-color,color,box-shadow] duration-150 hover:text-marinho; min-height: 40px; }
+.chip-ativo { @apply bg-white text-marinho shadow-[0_1px_2px_rgba(4,20,53,0.12),0_2px_8px_-2px_rgba(4,20,53,0.18)] hover:text-marinho; }
+.contador-btn { @apply w-11 text-lg font-semibold text-marinho transition-colors hover:bg-[#f2f5fa] disabled:text-marinho/25 disabled:hover:bg-white; min-height: 44px; }
+.dia { @apply inline-flex min-h-[44px] min-w-[40px] px-1.5 items-center justify-center rounded-xl border text-sm font-semibold transition-[background-color,border-color,color] duration-150 active:scale-[0.97]; }
 .dia-on { @apply border-marinho bg-marinho text-white; }
-.dia-off { @apply border-linha bg-white text-marinho/60 hover:border-marinho/40; }
+.dia-off { @apply border-[#d3dae6] bg-white text-marinho/60 hover:border-marinho/40 hover:text-marinho; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media print {
   .nao-imprimir { display: none !important; }
-  body { background: white; }
-  .painel { break-inside: avoid; border-color: #bbb; }
+  body { background: white; background-image: none; }
+  .painel { break-inside: avoid; box-shadow: none; border: 1px solid #bbb; }
   thead { display: table-header-group; }
 }
 @media print { @page { size: A4; margin: 14mm; } }
