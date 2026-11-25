@@ -1,0 +1,11 @@
+// Publicação no Cloudflare (Workers com arquivos estáticos).
+// O Cloudflare roda "npm run build" e depois "npx wrangler deploy", que publica a pasta dist.
+// O "name" precisa ser igual ao nome do projeto criado no painel do Cloudflare.
+{
+  "name": "simulador-escala-contad",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
